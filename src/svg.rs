@@ -44,7 +44,9 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
   <g class=\"links\">")?;
 
     // This is used to reduce the calcualted coordiantes into a 950x950 box
-    let canvas_scale = 950.0 / (list_abs_max(&loc));
+    let abs_max = list_abs_max(&loc);
+    eprintln!("Abs Max: {}", abs_max);
+    let canvas_scale = 950.0 / abs_max;
     for edge in graph.edges.iter() {
         writeln!(&mut out, "    <line class=\"link\" targetId=\"{}\" sourceId=\"{}\" x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\"/>",
                  edge.src, edge.trg, 

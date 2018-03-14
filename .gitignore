@@ -4,3 +4,5 @@
 iterate.dat
 lod-cloud.svg
 lod-data.json
+lod-data-small.json
+*.swp

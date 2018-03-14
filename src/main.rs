@@ -8,6 +8,7 @@ extern crate clap;
 mod data;
 mod graph;
 mod svg;
+mod tree;
 
 use clap::{Arg, App};
 use rustimization::minimizer::Funcmin;
@@ -90,7 +91,7 @@ Gradietn or lbfgsb = Limited BFGS)")
 
     let spring = args.value_of("spring")
         .map(|s| { s.parse::<f64>().expect("Spring force not a decimal") })
-        .unwrap_or(1.0);
+        .unwrap_or(0.0);
 
     let repulse = args.value_of("repulse")
         .map(|s| { s.parse::<f64>().expect("Repulsion force not a decimal") })
@@ -98,13 +99,13 @@ Gradietn or lbfgsb = Limited BFGS)")
 
     let centre = args.value_of("centre")
         .map(|s| { s.parse::<f64>().expect("Center attraction force not a decimal") })
-        .unwrap_or(1.0);
+        .unwrap_or(0.0);
 
     let n_blocks = args.value_of("n_blocks")
         .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
         .unwrap_or(1);
 
-    let smin = 30.0;
+    let smin = 80.0;
 
     let algorithm = match args.value_of("algorithm") {
         Some("cg") => "cg",
@@ -131,13 +132,13 @@ Gradietn or lbfgsb = Limited BFGS)")
     let g = |x : &Vec<f64>| {
         graph.gradient2(x, spring, repulse, smin, centre, 10.0, 1000.0, n_blocks) 
     };
-    let mut x = graph.spiral();
+    let mut x = tree::build_tree(&graph, smin * 5.0);
 
     {
         let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
         println!("{}", max_iters);
         fmin.max_iteration(max_iters);
-        fmin.minimize();
+        //fmin.minimize();
     }
 
     svg::write_graph(&graph, &x, args.value_of("output").expect("Out file not given")).expect("Could not write graph");
@@ -145,3 +146,4 @@ Gradietn or lbfgsb = Limited BFGS)")
     //graph.print_graph(&x);
     //println!("Cost: {}", graph.cost(&x, spring, repulse, centre));
 }
+

@@ -55,8 +55,9 @@ impl Graph {
                     if v1 != v2_id {
                         let x = loc[v1 * 2] - v2_x;
                         let y = loc[v1 * 2 + 1] - v2_y;
+                        let d = (x * x + y * y).sqrt();
                         // Sigmoid repulsion factor
-                        cost += repulse / (1.0 + ((x * x + y * y).sqrt() - smin).exp());
+                        cost += repulse / (1.0 + (d - smin).exp());
                     }
                 }
                 // Canvas bound
@@ -70,7 +71,7 @@ impl Graph {
                     if v1 != v2 {
                         let x = loc[v1 * 2] - loc[v2 * 2];
                         let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-                        cost += repulse / (1.0 + (smin - (x * x + y * y).sqrt()).exp());
+                        cost += repulse / (1.0 + ((x * x + y * y).sqrt() - smin).exp());
                     }
                 }
                 // Centre attraction
@@ -110,9 +111,15 @@ impl Graph {
                         let x = loc[v1 * 2] - v2_x;
                         let y = loc[v1 * 2 + 1] - v2_y;
                         let d = (x*x + y*y).sqrt();
-                        let s = sigma(smin - d);
-                        gradient[v1 * 2] += repulse * 2.0 * s * (1.0 - s) / d * x;
-                        gradient[v1 * 2 + 1] +=  repulse * 2.0 * s * (1.0 - s) / d * y;
+                        let s = sigma(d - smin);
+                        if d > 1e-6 {
+                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
+                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
+                        } else {
+                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / 1e-6 * x;
+                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / 1e-6 * y;
+                        }
+
                     }
                 }
                 // Centre attraction
@@ -130,14 +137,13 @@ impl Graph {
         } else {
              for v1 in 0..self.n {
                 for v2 in 0..self.n {
-                    // Repulsion 1/||vi - vj||
                     if v1 != v2 {
                         let x = loc[v1 * 2] - loc[v2 * 2];
                         let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
                         let d = (x*x + y*y).sqrt();
-                        let s = sigma(smin - d);
-                        gradient[v1 * 2] += repulse * 2.0 * s * (1.0 - s) / d * x;
-                        gradient[v1 * 2 + 1] +=  repulse * 2.0 * s * (1.0 - s) / d * y;
+                        let s = sigma(d - smin);
+                        gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
+                        gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
                     }
                 }
                 // Centre attraction
@@ -156,107 +162,107 @@ impl Graph {
         gradient
     }
 
-    pub fn cost(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
-                centre : f64, n_blocks : usize) -> f64 {
-        let mut cost = 0.0;
+    //pub fn cost(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
+    //            centre : f64, n_blocks : usize) -> f64 {
+    //    let mut cost = 0.0;
 
-        for edge in self.edges.iter() {
-            let x = loc[edge.src * 2] - loc[edge.trg * 2];
-            let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
-            let d = x * x + y * y;
-            if d > smin {
-                cost += spring * (d - smin);
-            }
-        }
+    //    for edge in self.edges.iter() {
+    //        let x = loc[edge.src * 2] - loc[edge.trg * 2];
+    //        let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
+    //        let d = x * x + y * y;
+    //        if d > smin {
+    //            cost += spring * (d - smin);
+    //        }
+    //    }
 
-        if n_blocks > 1 {
-            let blocking = Blocking::create(loc, n_blocks);
+    //    if n_blocks > 1 {
+    //        let blocking = Blocking::create(loc, n_blocks);
 
-            for v1 in 0..self.n {
-                for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
-                    if v1 != v2_id {
-                        let x = loc[v1 * 2] - v2_x;
-                        let y = loc[v1 * 2 + 1] - v2_y;
-                        cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
-                    }
-                }
-                // Centre attraction
-                cost += centre * loc[v1 * 2] * loc[v1 * 2];
-                cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
-            }
-        } else {
-            for v1 in 0..self.n {
-                for v2 in 0..self.n {
-                    if v1 != v2 {
-                        let x = loc[v1 * 2] - loc[v2 * 2];
-                        let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-                        cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
-                    }
-                }
-                // Centre attraction
-                cost += centre * loc[v1 * 2] * loc[v1 * 2];
-                cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
-            }
-        }
-        cost
-    }
+    //        for v1 in 0..self.n {
+    //            for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
+    //                if v1 != v2_id {
+    //                    let x = loc[v1 * 2] - v2_x;
+    //                    let y = loc[v1 * 2 + 1] - v2_y;
+    //                    cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
+    //                }
+    //            }
+    //            // Centre attraction
+    //            cost += centre * loc[v1 * 2] * loc[v1 * 2];
+    //            cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
+    //        }
+    //    } else {
+    //        for v1 in 0..self.n {
+    //            for v2 in 0..self.n {
+    //                if v1 != v2 {
+    //                    let x = loc[v1 * 2] - loc[v2 * 2];
+    //                    let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
+    //                    cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
+    //                }
+    //            }
+    //            // Centre attraction
+    //            cost += centre * loc[v1 * 2] * loc[v1 * 2];
+    //            cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
+    //        }
+    //    }
+    //    cost
+    //}
 
 
-    pub fn gradient(&self, loc : &Vec<f64>, spring : f64, repulse : f64, 
-                    smin : f64, centre : f64, n_blocks : usize) -> Vec<f64> {
-        let mut gradient = Vec::new();
-        gradient.resize(self.n * 2, 0.0f64);
-        // Spring cost ||vi - vj||^2
-        for edge in self.edges.iter() {
-            let x = loc[edge.src * 2] - loc[edge.trg * 2];
-            let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
-            let d = x * x + y * y;
+    //pub fn gradient(&self, loc : &Vec<f64>, spring : f64, repulse : f64, 
+    //                smin : f64, centre : f64, n_blocks : usize) -> Vec<f64> {
+    //    let mut gradient = Vec::new();
+    //    gradient.resize(self.n * 2, 0.0f64);
+    //    // Spring cost ||vi - vj||^2
+    //    for edge in self.edges.iter() {
+    //        let x = loc[edge.src * 2] - loc[edge.trg * 2];
+    //        let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
+    //        let d = x * x + y * y;
 
-            if d > smin {
-                gradient[edge.src * 2] += spring * 2.0 * x;
-                gradient[edge.src * 2 + 1] += spring * 2.0 * y;
-                gradient[edge.trg * 2] -= spring * 2.0 * x;
-                gradient[edge.trg * 2 + 1] -= spring * 2.0 * y;
-            }
+    //        if d > smin {
+    //            gradient[edge.src * 2] += spring * 2.0 * x;
+    //            gradient[edge.src * 2 + 1] += spring * 2.0 * y;
+    //            gradient[edge.trg * 2] -= spring * 2.0 * x;
+    //            gradient[edge.trg * 2 + 1] -= spring * 2.0 * y;
+    //        }
 
-        }
+    //    }
 
-        if n_blocks > 1 {
-            let blocking = Blocking::create(loc, n_blocks);
-            for v1 in 0..self.n {
-                for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
-                    // Repulsion 1/||vi - vj||
-                    if v1 != v2_id {
-                        let x = loc[v1 * 2] - v2_x;
-                        let y = loc[v1 * 2 + 1] - v2_y;
-                        let m = f64::sqrt(x*x + y*y);
-                        gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
-                        gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
-                    }
-                }
-                // Centre attraction
-                gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
-                gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
-             }
-        } else {
-             for v1 in 0..self.n {
-                for v2 in 0..self.n {
-                    // Repulsion 1/||vi - vj||
-                    if v1 != v2 {
-                        let x = loc[v1 * 2] - loc[v2 * 2];
-                        let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-                        let m = f64::sqrt(x*x + y*y);
-                        gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
-                        gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
-                    }
-                }
-                // Centre attraction
-                gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
-                gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
-            }
-        }
-        gradient
-    }
+    //    if n_blocks > 1 {
+    //        let blocking = Blocking::create(loc, n_blocks);
+    //        for v1 in 0..self.n {
+    //            for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
+    //                // Repulsion 1/||vi - vj||
+    //                if v1 != v2_id {
+    //                    let x = loc[v1 * 2] - v2_x;
+    //                    let y = loc[v1 * 2 + 1] - v2_y;
+    //                    let m = f64::sqrt(x*x + y*y);
+    //                    gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
+    //                    gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
+    //                }
+    //            }
+    //            // Centre attraction
+    //            gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
+    //            gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
+    //         }
+    //    } else {
+    //         for v1 in 0..self.n {
+    //            for v2 in 0..self.n {
+    //                // Repulsion 1/||vi - vj||
+    //                if v1 != v2 {
+    //                    let x = loc[v1 * 2] - loc[v2 * 2];
+    //                    let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
+    //                    let m = f64::sqrt(x*x + y*y);
+    //                    gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
+    //                    gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
+    //                }
+    //            }
+    //            // Centre attraction
+    //            gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
+    //            gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
+    //        }
+    //    }
+    //    gradient
+    //}
 }
 
 #[derive(Debug,PartialEq,Clone)]
@@ -299,10 +305,12 @@ impl Blocking {
         let block_size = max * 2.0 / (n_blocks as f64);
 
         for i in 0..(xs.len() / 2) {
-            let x = ((xs[i * 2] + max) / block_size).floor() as usize;
-            let y = ((xs[i * 2 + 1] + max) / block_size).floor() as usize;
+            if xs[i * 2].is_finite() && xs[i * 2 + 1].is_finite() {
+                let x = ((xs[i * 2] + max) / block_size).floor() as usize;
+                let y = ((xs[i * 2 + 1] + max) / block_size).floor() as usize;
 
-            blocks[x][y].push((i, xs[i * 2], xs[i * 2 + 1]));
+                blocks[x][y].push((i, xs[i * 2], xs[i * 2 + 1]));
+            }
         }
         Blocking {
             blocks: blocks,
@@ -313,36 +321,40 @@ impl Blocking {
     }
 
     fn nearby<'a>(&'a self, x : f64, y : f64) -> Vec<(usize, f64, f64)> {
-        let x_id = ((x + self.max) / self.block_size).floor() as usize;
-        let y_id = ((y + self.max) / self.block_size).floor() as usize;
+        if x.is_finite() && y.is_finite() {
+            let x_id = ((x + self.max) / self.block_size).floor() as usize;
+            let y_id = ((y + self.max) / self.block_size).floor() as usize;
 
-        let mut elems = self.blocks[x_id][y_id].clone();
-        if x_id > 0 {
+            let mut elems = self.blocks[x_id][y_id].clone();
+            if x_id > 0 {
+                if y_id > 0 {
+                    elems.extend(self.blocks[x_id - 1][y_id - 1].iter());
+                }
+                if y_id < self.n_blocks - 1 {
+                    elems.extend(self.blocks[x_id - 1][y_id + 1].iter());
+                }
+                elems.extend(self.blocks[x_id - 1][y_id].iter());
+            }
+            if x_id < self.n_blocks - 1 {
+                if y_id > 0 {
+                    elems.extend(self.blocks[x_id + 1][y_id - 1].iter());
+                }
+                if y_id < self.n_blocks - 1 {
+                    elems.extend(self.blocks[x_id + 1][y_id + 1].iter());
+                }
+                elems.extend(self.blocks[x_id + 1][y_id].iter());
+            }
             if y_id > 0 {
-                elems.extend(self.blocks[x_id - 1][y_id - 1].iter());
+                elems.extend(self.blocks[x_id][y_id - 1].iter());
             }
             if y_id < self.n_blocks - 1 {
-                elems.extend(self.blocks[x_id - 1][y_id + 1].iter());
+                elems.extend(self.blocks[x_id][y_id + 1].iter());
             }
-            elems.extend(self.blocks[x_id - 1][y_id].iter());
+     
+            elems
+        } else {
+            Vec::new()
         }
-        if x_id < self.n_blocks - 1 {
-            if y_id > 0 {
-                elems.extend(self.blocks[x_id + 1][y_id - 1].iter());
-            }
-            if y_id < self.n_blocks - 1 {
-                elems.extend(self.blocks[x_id + 1][y_id + 1].iter());
-            }
-            elems.extend(self.blocks[x_id + 1][y_id].iter());
-        }
-        if y_id > 0 {
-            elems.extend(self.blocks[x_id][y_id - 1].iter());
-        }
-        if y_id < self.n_blocks - 1 {
-            elems.extend(self.blocks[x_id][y_id + 1].iter());
-        }
- 
-        elems
     }
 }
 
