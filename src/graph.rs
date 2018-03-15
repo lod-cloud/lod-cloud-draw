@@ -52,15 +52,9 @@ impl Graph {
                     if v1 != v2_id {
                         let x = loc[v1 * 2] - v2_x;
                         let y = loc[v1 * 2 + 1] - v2_y;
-                        let d = (x * x + y * y).sqrt();
-                        // Sigmoid repulsion factor
-                        cost += repulse / (1.0 + (d - smin).exp());
+                        cost += repulse_cost(x, y, smin, repulse);
                     }
                 }
-                // Canvas bound
-                let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                         loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-                cost += centre * (d / canvas_size).powf(roundness);
             }
         } else {
             for v1 in 0..self.n {
@@ -68,14 +62,16 @@ impl Graph {
                     if v1 != v2 {
                         let x = loc[v1 * 2] - loc[v2 * 2];
                         let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-                        cost += repulse / (1.0 + ((x * x + y * y).sqrt() - smin).exp());
+                        cost += repulse_cost(x, y, smin, repulse);
                     }
                 }
-                // Centre attraction
-                let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                         loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-                cost += centre * (d / canvas_size).powf(roundness);
             }
+        }
+        for v1 in 0..self.n {
+            // Centre attraction
+            let d = (loc[v1 * 2] * loc[v1 * 2] + 
+                     loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
+            cost += centre * (d / canvas_size).powf(roundness);
         }
         cost
     }
@@ -108,29 +104,10 @@ impl Graph {
                     if v1 != v2_id {
                         let x = loc[v1 * 2] - v2_x;
                         let y = loc[v1 * 2 + 1] - v2_y;
-                        let d = (x*x + y*y).sqrt();
-                        let s = sigma(d - smin);
-                        if d > 1e-6 {
-                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
-                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
-                        } else {
-                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / 1e-6 * x;
-                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / 1e-6 * y;
-                        }
-
+                        repulse_grad(&mut gradient, x, y, v1, v2_id, 
+                                     smin, repulse);
                     }
                 }
-                // Centre attraction
-                let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                         loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-                gradient[v1 * 2] += centre * 
-                    canvas_size.powf(-roundness) *
-                    roundness * loc[v1 * 2] *
-                    d.powf(roundness - 2.0);
-                gradient[v1 * 2 + 1] += centre * 
-                    canvas_size.powf(-roundness) *
-                    roundness * loc[v1 * 2 + 1] *
-                    d.powf(roundness - 2.0);
              }
         } else {
              for v1 in 0..self.n {
@@ -138,32 +115,48 @@ impl Graph {
                     if v1 != v2 {
                         let x = loc[v1 * 2] - loc[v2 * 2];
                         let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-                        let d = (x*x + y*y).sqrt();
-                        let s = sigma(d - smin);
-                        if d > 1e-6 {
-                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
-                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
-                        } else {
-                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / 1e-6 * x;
-                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / 1e-6 * y;
-                        }
-
+                        repulse_grad(&mut gradient, x, y, v1, v2, 
+                                     smin, repulse);
                     }
                 }
-                // Centre attraction
-                let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                         loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-                gradient[v1 * 2] += centre * 
-                    canvas_size.powf(-roundness) *
-                    roundness * loc[v1 * 2] *
-                    d.powf(roundness - 2.0);
-                gradient[v1 * 2 + 1] += centre * 
-                    canvas_size.powf(-roundness) *
-                    roundness * loc[v1 * 2 + 1] *
-                    d.powf(roundness - 2.0);
              }
         }
+
+        for v1 in 0..self.n {
+            // Centre attraction
+            let d = (loc[v1 * 2] * loc[v1 * 2] + 
+                     loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
+            gradient[v1 * 2] += centre * 
+                canvas_size.powf(-roundness) *
+                roundness * loc[v1 * 2] *
+                d.powf(roundness - 2.0);
+            gradient[v1 * 2 + 1] += centre * 
+                canvas_size.powf(-roundness) *
+                roundness * loc[v1 * 2 + 1] *
+                d.powf(roundness - 2.0);
+        }
         gradient
+    }
+}
+
+fn repulse_cost(x : f64, y : f64, smin : f64, repulse : f64) -> f64 {
+    let d = (x * x + y * y).sqrt();
+    repulse * relu(smin - d)
+}
+
+
+fn repulse_grad(gradient : &mut Vec<f64>, x : f64, y : f64,
+                v1 : usize, v2 : usize, smin : f64, repulse : f64) {
+    let d = (x * x + y * y).sqrt();
+    let s = sigma(smin - d);
+    if d > 0.0 {
+        gradient[v1 * 2] -= repulse * 2.0 * x * s / d;
+        gradient[v1 * 2 + 1] -= repulse * 2.0 * y * s / d;
+    } else {
+        // Superposition, we push in a direction related 
+        // to the ID
+        gradient[v1 * 2] -= repulse * 2.0 * s * (v1 as f64).cos() * 1e-10;
+        gradient[v1 * 2 + 1] -= repulse * 2.0 * s * (v2 as f64).sin() * 1e-10;
     }
 }
 
@@ -264,6 +257,10 @@ impl Blocking {
 
 fn sigma(x : f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
+}
+
+fn relu(x : f64) -> f64 {
+    (1.0 + x.exp()).ln()
 }
 
 /// Build the graph from the dataset

@@ -59,15 +59,15 @@ pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
 fn push_nearby(mut loc : Vec<f64>, radius : f64) -> Vec<f64> {
     for i in 0..(loc.len() / 2) {
         for j in 0..(loc.len() / 2) {
-            if i != j {
+            if i < j {
                 let x = loc[i * 2] - loc[j * 2];
                 let y = loc[i * 2 + 1] - loc[j * 2 + 1];
                 let d = (x * x + y * y).sqrt();
                 if d < radius * 0.01 {
-                    loc[i * 2] += radius * 0.01;
-                    loc[i * 2 + 1] += radius * 0.01;
-                    loc[j * 2] -= radius * 0.01;
-                    loc[j * 2 + 1] -= radius * 0.01;
+                    loc[i * 2] += radius * 0.01 * (i as f64).cos();
+                    loc[i * 2 + 1] += radius * 0.01 * (i as f64).sin();
+                    loc[j * 2] += radius * 0.01 * (j as f64).cos();
+                    loc[j * 2 + 1] += radius * 0.01 * (j as f64).sin();
                 }
             }
         }
@@ -139,7 +139,7 @@ fn calculate_loc(loc : &mut Vec<f64>, parent : usize, nodes : &mut HashSet<usize
 #[cfg(test)]
 mod tests {
     use graph::{Graph, Edge};
-    use tree::{build_tree, to_angle};
+    use tree::{build_tree, to_angle, push_nearby};
     use std::f64::consts::PI;
 
     #[test]
@@ -162,6 +162,24 @@ mod tests {
         assert!((to_angle(-0.5, -Z) - 8.0 * PI / 6.0) < 1e-4);
         assert!((to_angle(0.5, -Z) - 10.0 * PI / 6.0) < 1e-4);
         assert!((to_angle(Z, -0.5) - 11.0 * PI / 6.0) < 1e-4);
+    }
+
+    #[test]
+    fn test_push_nearby() {
+        let mut v = Vec::new();
+        v.resize(10,0.0f64);
+        v = push_nearby(v, 1.0);
+        println!("{:?}", v);
+        for i in 0..5 {
+            for j in 0..5 {
+                if i != j {
+                    let x = v[i * 2] - v[j * 2];
+                    let y = v[i * 2 + 1] - v[j * 2 + 1];
+
+                    assert!(x*x + y*y > 0.0);
+                }
+            }
+        }
     }
 
 
