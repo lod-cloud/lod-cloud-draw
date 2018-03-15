@@ -1,7 +1,31 @@
+//! Layout algorithm to set the initial conditions of the graph.
+//! This attempts to build a tree in the following method
+//! 1. Find the most connected central node.
+//! 2. Fan all nodes connected to the centre in a 360° arc.
+//! 3. Recursively fan each other node out in a 180° arc.
 use graph::Graph;
 use std::f64::consts::PI;
 use std::collections::HashSet;
 
+/// Builds a tree layout from a graph, where `radius` is the radius of the 
+/// span. The return value is the list of [x0,y0,...,xn,yn]
+///
+/// # Examples
+///
+/// ```
+/// let mut g = Graph::new();
+/// let v1 = g.add_vertex("v1");
+/// let v2 = g.add_vertex("v2");
+/// let v3 = g.add_vertex("v3");
+/// let v4 = g.add_vertex("v4");
+/// let v5 = g.add_vertex("v5");
+/// g.edges.push(Edge::new(v1, v2));
+/// g.edges.push(Edge::new(v1, v3));
+/// g.edges.push(Edge::new(v1, v4));
+/// g.edges.push(Edge::new(v4, v5));
+///
+/// let result = build_tree(&g, 10.0);
+/// ```
 pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
     let mut nodes = HashSet::new();
     nodes.extend(0..graph.n);
@@ -138,22 +162,17 @@ mod tests {
         assert!((to_angle(-0.5, -Z) - 8.0 * PI / 6.0) < 1e-4);
         assert!((to_angle(0.5, -Z) - 10.0 * PI / 6.0) < 1e-4);
         assert!((to_angle(Z, -0.5) - 11.0 * PI / 6.0) < 1e-4);
-        //assert!((to_angle(10.0,0.0) - 0.0) < 1e-4);
-        //assert!((to_angle(-0.000000001,-10.0) - 3.0 * PI / 2.0) < 1e-4);
-        //assert!((to_angle(0.000000001,-10.0) - 3.0 * PI / 2.0) < 1e-4);
-        //assert!((to_angle(-1.0,0.00001) - PI) < 1e-4);
-        //assert!((to_angle(-1.0,-0.000001) - PI) < 1e-4);
     }
 
 
     #[test]
     fn test_tree() {
         let mut g = Graph::new();
-        let v1 = g.add_vertex();
-        let v2 = g.add_vertex();
-        let v3 = g.add_vertex();
-        let v4 = g.add_vertex();
-        let v5 = g.add_vertex();
+        let v1 = g.add_vertex("v1");
+        let v2 = g.add_vertex("v2");
+        let v3 = g.add_vertex("v3");
+        let v4 = g.add_vertex("v4");
+        let v5 = g.add_vertex("v5");
         g.edges.push(Edge::new(v1, v2));
         g.edges.push(Edge::new(v1, v3));
         g.edges.push(Edge::new(v1, v4));

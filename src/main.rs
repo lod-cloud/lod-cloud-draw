@@ -15,23 +15,6 @@ use rustimization::minimizer::Funcmin;
 use std::fs::File;
 use data::Dataset;
 use std::collections::HashMap;
-use graph::{Graph,Edge};
-
-fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
-    let mut g = Graph::new();
-    let mut idmap = HashMap::new();
-    for dataset in data.values() {
-        if !dataset.links.is_empty() {
-            let v1 = *idmap.entry(&dataset.identifier).or_insert_with(|| g.add_vertex());
-            for link in dataset.links.iter() {
-                let v2 = *idmap.entry(&link.target).or_insert_with(|| g.add_vertex());
-                g.edges.push(Edge::new(v1,v2));
-                g.edges.push(Edge::new(v2,v1));
-            }
-        }
-    }
-    g
-}
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -101,7 +84,7 @@ And s,r,w are tuning constants")
              .long("algorithm")
              .value_name("cg|lbfgsb")
              .help("The algorithm used to find the cloud diagram (cg=Conjugate
-Gradietn or lbfgsb = Limited BFGS)")
+Gradient or lbfgsb = Limited BFGS)")
              .takes_value(true))
         .arg(Arg::with_name("max_iters")
              .short("i")
@@ -113,7 +96,8 @@ Gradietn or lbfgsb = Limited BFGS)")
              .short("n")
              .long("n-blocks")
              .value_name("BLOCKS")
-             .help("Apply an n x n blocking method to speed up the algorithm (default=1, no blocking")
+             .help("Apply an n x n blocking method to speed up the algorithm 
+(default=1, no blocking)")
              .takes_value(true))
         .get_matches();
 
@@ -162,13 +146,13 @@ Gradietn or lbfgsb = Limited BFGS)")
 
     let data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("JSON error");
 
-    let graph = build_graph(&data);
+    let graph = graph::build_graph(&data);
 
     let f = |x : &Vec<f64>| {
-        graph.cost2(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
+        graph.cost(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
     };
     let g = |x : &Vec<f64>| {
-        graph.gradient2(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
+        graph.gradient(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
     };
 
     // 5.0 is constant here that allows the nodes to be placed sufficiently

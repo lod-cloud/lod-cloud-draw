@@ -1,43 +1,40 @@
+//! The graph is a set of vertices and links between these vertices
+use data::Dataset;
+use std::collections::HashMap;
+
+/// A graph with of size `n` with a set of edges
 #[derive(Debug,PartialEq,Clone)]
 pub struct Graph {
     pub n: usize,
+    values: HashMap<String, usize>,
     pub edges: Vec<Edge>
 }
 
 impl Graph {
+    /// Create a new empty graph
     pub fn new() -> Graph {
         Graph {
             n: 0,
+            values: HashMap::new(),
             edges : Vec::new()
         }
     }
 
-    pub fn add_vertex(&mut self) -> usize {
-        self.n += 1;
-        (self.n - 1)
+    /// Add a vertex or look up the index of a vertex
+    pub fn add_vertex(&mut self, name : &str) -> usize {
+        if !self.values.contains_key(name) {
+            self.values.insert(name.to_string(), self.n);
+            self.n += 1;
+            (self.n - 1)
+        } else {
+            self.values[name]
+        }
     }
 
-//    pub fn spiral(&self) -> Vec<f64> {
-//        let mut v = Vec::new();
-//        for i in 0..self.n {
-//            let i_f = i as f64;
-//            v.push(i_f * f64::cos(i_f));
-//            v.push(i_f * f64::sin(i_f));
-//        }
-//        v
-//    }
-//
-    //fn print_graph(&self, x : &Vec<f64>) {
-    //    println!("Graph of {} vertices", self.n);
-    //    for id in 0..self.n {
-    //        println!("{}: ({:.3}, {:.3})", id, x[id * 2], x[id * 2 + 1]);
-    //    }
-    //}
-    //
-
-    pub fn cost2(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
-                 centre : f64, roundness : f64, canvas_size : f64,
-                 n_blocks : usize) -> f64 {
+    /// Estimate the cost of a given set of locations (`loc`) given parameters
+    pub fn cost(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
+                centre : f64, roundness : f64, canvas_size : f64,
+                n_blocks : usize) -> f64 {
         let mut cost = 0.0;
 
         for edge in self.edges.iter() {
@@ -83,9 +80,10 @@ impl Graph {
         cost
     }
 
-    pub fn gradient2(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
-                 centre : f64, roundness : f64, canvas_size : f64,
-                 n_blocks : usize) -> Vec<f64> {
+    /// Calculate the gradient (d cost / d loc) of a set of locations (`loc`)
+    pub fn gradient(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
+                    centre : f64, roundness : f64, canvas_size : f64,
+                    n_blocks : usize) -> Vec<f64> {
         let mut gradient = Vec::new();
         gradient.resize(self.n * 2, 0.0f64);
         // Spring cost ||vi - vj||^2
@@ -167,110 +165,9 @@ impl Graph {
         }
         gradient
     }
-
-    //pub fn cost(&self, loc : &Vec<f64>, spring : f64, repulse : f64, smin : f64,
-    //            centre : f64, n_blocks : usize) -> f64 {
-    //    let mut cost = 0.0;
-
-    //    for edge in self.edges.iter() {
-    //        let x = loc[edge.src * 2] - loc[edge.trg * 2];
-    //        let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
-    //        let d = x * x + y * y;
-    //        if d > smin {
-    //            cost += spring * (d - smin);
-    //        }
-    //    }
-
-    //    if n_blocks > 1 {
-    //        let blocking = Blocking::create(loc, n_blocks);
-
-    //        for v1 in 0..self.n {
-    //            for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
-    //                if v1 != v2_id {
-    //                    let x = loc[v1 * 2] - v2_x;
-    //                    let y = loc[v1 * 2 + 1] - v2_y;
-    //                    cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
-    //                }
-    //            }
-    //            // Centre attraction
-    //            cost += centre * loc[v1 * 2] * loc[v1 * 2];
-    //            cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
-    //        }
-    //    } else {
-    //        for v1 in 0..self.n {
-    //            for v2 in 0..self.n {
-    //                if v1 != v2 {
-    //                    let x = loc[v1 * 2] - loc[v2 * 2];
-    //                    let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-    //                    cost += repulse * 1.0 / f64::sqrt(x * x + y * y);
-    //                }
-    //            }
-    //            // Centre attraction
-    //            cost += centre * loc[v1 * 2] * loc[v1 * 2];
-    //            cost += centre * loc[v1 * 2 + 1] * loc[v1 * 2 + 1];
-    //        }
-    //    }
-    //    cost
-    //}
-
-
-    //pub fn gradient(&self, loc : &Vec<f64>, spring : f64, repulse : f64, 
-    //                smin : f64, centre : f64, n_blocks : usize) -> Vec<f64> {
-    //    let mut gradient = Vec::new();
-    //    gradient.resize(self.n * 2, 0.0f64);
-    //    // Spring cost ||vi - vj||^2
-    //    for edge in self.edges.iter() {
-    //        let x = loc[edge.src * 2] - loc[edge.trg * 2];
-    //        let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
-    //        let d = x * x + y * y;
-
-    //        if d > smin {
-    //            gradient[edge.src * 2] += spring * 2.0 * x;
-    //            gradient[edge.src * 2 + 1] += spring * 2.0 * y;
-    //            gradient[edge.trg * 2] -= spring * 2.0 * x;
-    //            gradient[edge.trg * 2 + 1] -= spring * 2.0 * y;
-    //        }
-
-    //    }
-
-    //    if n_blocks > 1 {
-    //        let blocking = Blocking::create(loc, n_blocks);
-    //        for v1 in 0..self.n {
-    //            for &(v2_id, v2_x, v2_y) in blocking.nearby(loc[v1 * 2], loc[v1 * 2 + 1]).iter() {
-    //                // Repulsion 1/||vi - vj||
-    //                if v1 != v2_id {
-    //                    let x = loc[v1 * 2] - v2_x;
-    //                    let y = loc[v1 * 2 + 1] - v2_y;
-    //                    let m = f64::sqrt(x*x + y*y);
-    //                    gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
-    //                    gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
-    //                }
-    //            }
-    //            // Centre attraction
-    //            gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
-    //            gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
-    //         }
-    //    } else {
-    //         for v1 in 0..self.n {
-    //            for v2 in 0..self.n {
-    //                // Repulsion 1/||vi - vj||
-    //                if v1 != v2 {
-    //                    let x = loc[v1 * 2] - loc[v2 * 2];
-    //                    let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
-    //                    let m = f64::sqrt(x*x + y*y);
-    //                    gradient[v1 * 2] -= repulse * 2.0 * x / m / m / m;
-    //                    gradient[v1 * 2 + 1] -=  repulse * 2.0 * y / m / m / m;
-    //                }
-    //            }
-    //            // Centre attraction
-    //            gradient[v1 * 2] += centre * 2.0 * loc[v1 * 2];
-    //            gradient[v1 * 2 + 1] += centre * 2.0 * loc[v1 * 2 + 1];
-    //        }
-    //    }
-    //    gradient
-    //}
 }
 
+/// An edge between two vertices
 #[derive(Debug,PartialEq,Clone)]
 pub struct Edge {
     pub src : usize,
@@ -278,6 +175,7 @@ pub struct Edge {
 }
 
 impl Edge {
+    /// Create an edge
     pub fn new(from : usize, to  : usize) -> Edge {
         Edge {
             src: from,
@@ -368,4 +266,18 @@ fn sigma(x : f64) -> f64 {
     1.0 / (1.0 + (-x).exp())
 }
 
-
+/// Build the graph from the dataset
+pub fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
+    let mut g = Graph::new();
+    for dataset in data.values() {
+        if !dataset.links.is_empty() {
+            let v1 = g.add_vertex(&dataset.identifier);
+            for link in dataset.links.iter() {
+                let v2 = g.add_vertex(&link.target);
+                g.edges.push(Edge::new(v1,v2));
+                g.edges.push(Edge::new(v2,v1));
+            }
+        }
+    }
+    g
+}

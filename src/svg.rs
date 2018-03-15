@@ -1,8 +1,10 @@
+//! Methods for outputting graphs as SVG
 use std::path::Path;
 use std::fs::File;
 use std::io::{Result,BufWriter,Write};
 use graph::Graph;
 
+/// Output a graph with a set of locations as an SVG file
 pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
                                     out_file : P) -> Result<()> {
 
@@ -45,7 +47,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
 
     // This is used to reduce the calcualted coordiantes into a 950x950 box
     let abs_max = list_abs_max(&loc);
-    eprintln!("Abs Max: {}", abs_max);
+    eprintln!("Final well size: {:.3}", abs_max);
     let canvas_scale = 950.0 / abs_max;
     for edge in graph.edges.iter() {
         writeln!(&mut out, "    <line class=\"link\" targetId=\"{}\" sourceId=\"{}\" x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\"/>",
