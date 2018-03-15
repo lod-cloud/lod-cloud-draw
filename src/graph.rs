@@ -17,16 +17,16 @@ impl Graph {
         (self.n - 1)
     }
 
-    pub fn spiral(&self) -> Vec<f64> {
-        let mut v = Vec::new();
-        for i in 0..self.n {
-            let i_f = i as f64;
-            v.push(i_f * f64::cos(i_f));
-            v.push(i_f * f64::sin(i_f));
-        }
-        v
-    }
-
+//    pub fn spiral(&self) -> Vec<f64> {
+//        let mut v = Vec::new();
+//        for i in 0..self.n {
+//            let i_f = i as f64;
+//            v.push(i_f * f64::cos(i_f));
+//            v.push(i_f * f64::sin(i_f));
+//        }
+//        v
+//    }
+//
     //fn print_graph(&self, x : &Vec<f64>) {
     //    println!("Graph of {} vertices", self.n);
     //    for id in 0..self.n {
@@ -94,7 +94,7 @@ impl Graph {
             let y = loc[edge.src * 2 + 1] - loc[edge.trg * 2 + 1];
             let d = (x * x + y * y).sqrt();
 
-            if d != 0.0 {
+            if d > 0.0 {
                 gradient[edge.src * 2] += spring * x / d;
                 gradient[edge.src * 2 + 1] += spring * y / d;
                 gradient[edge.trg * 2] -= spring * x / d;
@@ -142,8 +142,14 @@ impl Graph {
                         let y = loc[v1 * 2 + 1] - loc[v2 * 2 + 1];
                         let d = (x*x + y*y).sqrt();
                         let s = sigma(d - smin);
-                        gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
-                        gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
+                        if d > 1e-6 {
+                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / d * x;
+                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / d * y;
+                        } else {
+                            gradient[v1 * 2] -= repulse * 2.0 * s * (1.0 - s) / 1e-6 * x;
+                            gradient[v1 * 2 + 1] -=  repulse * 2.0 * s * (1.0 - s) / 1e-6 * y;
+                        }
+
                     }
                 }
                 // Centre attraction

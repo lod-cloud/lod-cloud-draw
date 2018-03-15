@@ -37,8 +37,19 @@ fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
         .version("1.0")
         .author("John P. McCrae <john@mccr.ae>")
-        .about("Tool used to create LOD cloud diagrams as SVG by means of a 
-spring and force model")
+        .about("Tool used to create LOD cloud diagrams as SVG.
+The cloud is created as a minimization of the following function:
+
+  f(V,E) = s * sum_{e} spring(e) + r * sum_{v1} sum_{v2} repulse(v1, v2, d) + 
+                w * sum_{v} well(v, c)
+
+Where:
+
+  spring(e): Measures the length of a link in the cloud
+  repulse(v1, v2, d): Indicates if v1 and v2 are within a distance of d
+  well(v, c): Indicates if v is contained within a circle (well) of radius c
+
+And s,r,w are tuning constants")
         .arg(Arg::with_name("spring")
              .short("s")
              .long("spring")
@@ -51,11 +62,28 @@ spring and force model")
              .value_name("FORCE")
              .help("The value of the repulsion force")
              .takes_value(true))
-        .arg(Arg::with_name("centre")
-             .short("c")
-             .long("centre")
+        .arg(Arg::with_name("well")
+             .short("w")
+             .long("well")
              .value_name("FORCE")
-             .help("The value of the central attraction force")
+             .help("The value of the well boundary force")
+             .takes_value(true))
+        .arg(Arg::with_name("smin")
+             .short("d")
+             .long("distance")
+             .value_name("PIXELS")
+             .help("The minimal distance between bubbles")
+             .takes_value(true))
+        .arg(Arg::with_name("canvas")
+             .short("c")
+             .long("canvas")
+             .value_name("PIXELS")
+             .help("The radius of the circle that the bubbles should be contained in")
+             .takes_value(true))
+        .arg(Arg::with_name("well_wall")
+             .long("well-wall")
+             .value_name("EXPONENT")
+             .help("The strength of the well's walls. EXPERT ONLY")
              .takes_value(true))
         .arg(Arg::with_name("data")
              .index(1)
@@ -91,21 +119,31 @@ Gradietn or lbfgsb = Limited BFGS)")
 
     let spring = args.value_of("spring")
         .map(|s| { s.parse::<f64>().expect("Spring force not a decimal") })
-        .unwrap_or(0.0);
+        .unwrap_or(0.001);
 
     let repulse = args.value_of("repulse")
         .map(|s| { s.parse::<f64>().expect("Repulsion force not a decimal") })
-        .unwrap_or(1.0);
+        .unwrap_or(100.0);
 
     let centre = args.value_of("centre")
-        .map(|s| { s.parse::<f64>().expect("Center attraction force not a decimal") })
-        .unwrap_or(0.0);
+        .map(|s| { s.parse::<f64>().expect("Well force not a decimal") })
+        .unwrap_or(1.0);
 
     let n_blocks = args.value_of("n_blocks")
         .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
         .unwrap_or(1);
 
-    let smin = 80.0;
+    let smin = args.value_of("smin")
+        .map(|s| { s.parse::<f64>().expect("Distance of bubbles is not a decimal") })
+        .unwrap_or(60.0);
+
+    let canvas = args.value_of("canvas")
+        .map(|s| { s.parse::<f64>().expect("Canvas size is not a decimal") })
+        .unwrap_or(1000.0);
+
+    let wall = args.value_of("well_wall")
+        .map(|s| { s.parse::<f64>().expect("Well wall is not a decimal") })
+        .unwrap_or(10.0);
 
     let algorithm = match args.value_of("algorithm") {
         Some("cg") => "cg",
@@ -127,23 +165,22 @@ Gradietn or lbfgsb = Limited BFGS)")
     let graph = build_graph(&data);
 
     let f = |x : &Vec<f64>| {
-        graph.cost2(x, spring, repulse, smin, centre, 10.0, 1000.0, n_blocks) 
+        graph.cost2(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
     };
     let g = |x : &Vec<f64>| {
-        graph.gradient2(x, spring, repulse, smin, centre, 10.0, 1000.0, n_blocks) 
+        graph.gradient2(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
     };
+
+    // 5.0 is constant here that allows the nodes to be placed sufficiently
+    // far that the convergence to a good minimum is guaranteed
     let mut x = tree::build_tree(&graph, smin * 5.0);
 
     {
         let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
-        println!("{}", max_iters);
         fmin.max_iteration(max_iters);
-        //fmin.minimize();
+        fmin.minimize();
     }
 
     svg::write_graph(&graph, &x, args.value_of("output").expect("Out file not given")).expect("Could not write graph");
-
-    //graph.print_graph(&x);
-    //println!("Cost: {}", graph.cost(&x, spring, repulse, centre));
 }
 

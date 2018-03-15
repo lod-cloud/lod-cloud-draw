@@ -29,6 +29,25 @@ pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
     
     calculate_loc(&mut loc, v0, &mut nodes, &edges, graph, radius);
 
+    push_nearby(loc, radius)
+}
+
+fn push_nearby(mut loc : Vec<f64>, radius : f64) -> Vec<f64> {
+    for i in 0..(loc.len() / 2) {
+        for j in 0..(loc.len() / 2) {
+            if i != j {
+                let x = loc[i * 2] - loc[j * 2];
+                let y = loc[i * 2 + 1] - loc[j * 2 + 1];
+                let d = (x * x + y * y).sqrt();
+                if d < radius * 0.01 {
+                    loc[i * 2] += radius * 0.01;
+                    loc[i * 2 + 1] += radius * 0.01;
+                    loc[j * 2] -= radius * 0.01;
+                    loc[j * 2 + 1] -= radius * 0.01;
+                }
+            }
+        }
+    }
     loc
 }
 
@@ -36,9 +55,9 @@ pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
 fn to_angle(x : f64, y : f64) -> f64 {
     if x > 0.0 {
         if y > 0.0 {
-            (x/y).atan()
+            (y/x).atan()
         } else if y < 0.0 {
-            2.0 * PI + (x/y).atan()
+            2.0 * PI + (y/x).atan()
         } else {
             0.0
         }
@@ -100,7 +119,9 @@ mod tests {
     use std::f64::consts::PI;
 
     #[test]
+    #[allow(non_snake_case)]
     fn test_angle() {
+        let Z = f64::sqrt(3.0) / 2.0;
         assert!((to_angle(1.0,0.0) - 0.0) < 1e-4);
         assert!((to_angle(0.0,1.0) - PI / 2.0) < 1e-4);
         assert!((to_angle(-1.0,0.0) - PI) < 1e-4);
@@ -109,6 +130,14 @@ mod tests {
         assert!((to_angle(-1.0,1.0) - 3.0 * PI / 4.0) < 1e-4); 
         assert!((to_angle(-1.0,-1.0) - 5.0 * PI / 4.0) < 1e-4); 
         assert!((to_angle(1.0,-1.0) - 7.0 * PI / 4.0) < 1e-4); 
+        assert!((to_angle(Z, 0.5) - PI / 6.0) < 1e-4);
+        assert!((to_angle(0.5, Z) - 2.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(-0.5, Z) - 4.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(-Z, 0.5) - 5.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(-Z, -0.5) - 7.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(-0.5, -Z) - 8.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(0.5, -Z) - 10.0 * PI / 6.0) < 1e-4);
+        assert!((to_angle(Z, -0.5) - 11.0 * PI / 6.0) < 1e-4);
         //assert!((to_angle(10.0,0.0) - 0.0) < 1e-4);
         //assert!((to_angle(-0.000000001,-10.0) - 3.0 * PI / 2.0) < 1e-4);
         //assert!((to_angle(0.000000001,-10.0) - 3.0 * PI / 2.0) < 1e-4);
