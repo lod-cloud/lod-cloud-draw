@@ -35,6 +35,7 @@ pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
 
     for edge in graph.edges.iter() {
         edges[edge.src].push(edge.trg);
+        edges[edge.trg].push(edge.src);
     }
 
     let mut v0 = 0;

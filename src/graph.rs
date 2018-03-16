@@ -52,6 +52,17 @@ impl Graph {
         }
     }
 
+    /// Get the name of a vertex
+    pub fn vertex_name(&self, id : usize) -> Option<String> {
+        for (k, v) in self.values.iter() {
+            if *v == id {
+                return Some(k.clone());
+            }
+        }
+        return None;
+    }
+
+
     /// Estimate the cost of a given set of locations (`loc`) given parameters
     pub fn cost(&self, loc : &Vec<f64>, m : &Model) -> f64 {
         let mut cost = 0.0;
@@ -86,11 +97,13 @@ impl Graph {
                 }
             }
         }
+
         for v1 in 0..self.n {
-            // Centre attraction
-            let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                     loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-            cost += m.canvas * (d / m.canvas_size).powf(m.canvas_rigidity);
+            let x = loc[v1 * 2];
+            let y = loc[v1 * 2 + 1];
+            let d = (x * x + y * y).sqrt();
+            //cost += m.canvas * (d / m.canvas_size).powf(m.canvas_rigidity);
+            cost += m.canvas * relu(m.canvas_rigidity * (d - m.canvas_size));
         }
         cost
     }
@@ -138,17 +151,22 @@ impl Graph {
         }
 
         for v1 in 0..self.n {
-            // Centre attraction
-            let d = (loc[v1 * 2] * loc[v1 * 2] + 
-                     loc[v1 * 2 + 1] * loc[v1 * 2 + 1]).sqrt();
-            gradient[v1 * 2] += m.canvas * 
-                m.canvas_size.powf(-m.canvas_rigidity) *
-                m.canvas_rigidity * loc[v1 * 2] *
-                d.powf(m.canvas_rigidity - 2.0);
-            gradient[v1 * 2 + 1] += m.canvas * 
-                m.canvas_size.powf(-m.canvas_rigidity) *
-                m.canvas_rigidity * loc[v1 * 2 + 1] *
-                d.powf(m.canvas_rigidity - 2.0);
+            let x = loc[v1 * 2];
+            let y = loc[v1 * 2 + 1];
+            let d = (x * x + y * y).sqrt();
+            //gradient[v1 * 2] += m.canvas * 
+            //    m.canvas_size.powf(-m.canvas_rigidity) *
+            //    m.canvas_rigidity * loc[v1 * 2] *
+            //    d.powf(m.canvas_rigidity - 2.0);
+            //gradient[v1 * 2 + 1] += m.canvas * 
+            //    m.canvas_size.powf(-m.canvas_rigidity) *
+            //    m.canvas_rigidity * loc[v1 * 2 + 1] *
+            //    d.powf(m.canvas_rigidity - 2.0);
+            let s = sigma(m.canvas_rigidity * (d - m.canvas_size));
+            if d > 0.0 {
+                gradient[v1 * 2] += x * s / d;
+                gradient[v1 * 2 + 1] += y * s / d;
+            } // else gradient += 0.0
         }
         gradient
     }
@@ -156,22 +174,24 @@ impl Graph {
 
 fn repulse_cost(x : f64, y : f64, m : &Model) -> f64 {
     let d = (x * x + y * y).sqrt();
-    m.repulse * relu(m.repulse_dist - d)
+//    eprintln!("{} => {}", d, relu(m.repulse_rigidity * (m.repulse_dist - d)));
+
+    m.repulse * relu(m.repulse_rigidity * (m.repulse_dist - d))
 }
 
 
 fn repulse_grad(gradient : &mut Vec<f64>, x : f64, y : f64,
                 v1 : usize, v2 : usize, m : &Model) {
     let d = (x * x + y * y).sqrt();
-    let s = sigma(m.repulse_dist - d);
+    let s = sigma(m.repulse_rigidity * (m.repulse_dist - d));
     if d > 0.0 {
-        gradient[v1 * 2] -= m.repulse * 2.0 * x * s / d;
-        gradient[v1 * 2 + 1] -= m.repulse * 2.0 * y * s / d;
+        gradient[v1 * 2] -= m.repulse * m.repulse_rigidity * 2.0 * x * s / d;
+        gradient[v1 * 2 + 1] -= m.repulse * m.repulse_rigidity * 2.0 * y * s / d;
     } else {
         // Superposition, we push in a direction related 
         // to the ID
-        gradient[v1 * 2] -= m.repulse * 2.0 * s * (v1 as f64).cos() * 1e-10;
-        gradient[v1 * 2 + 1] -= m.repulse * 2.0 * s * (v2 as f64).sin() * 1e-10;
+        gradient[v1 * 2] -= m.repulse * m.repulse_rigidity * 2.0 * s * (v1 as f64).cos();
+        gradient[v1 * 2 + 1] -= m.repulse * m.repulse_rigidity * 2.0 * s * (v2 as f64).sin();
     }
 }
 
@@ -275,7 +295,11 @@ fn sigma(x : f64) -> f64 {
 }
 
 fn relu(x : f64) -> f64 {
-    (1.0 + x.exp()).ln()
+    if x < 100.0 { 
+        (1.0 + x.exp()).ln()
+    } else {
+        x
+    }
 }
 
 /// Build the graph from the dataset
@@ -285,11 +309,35 @@ pub fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
         if !dataset.links.is_empty() {
             let v1 = g.add_vertex(&dataset.identifier);
             for link in dataset.links.iter() {
-                let v2 = g.add_vertex(&link.target);
-                g.edges.push(Edge::new(v1,v2));
-                g.edges.push(Edge::new(v2,v1));
+                if data.contains_key(&link.target) {
+                    let v2 = g.add_vertex(&link.target);
+                    g.edges.push(Edge::new(v1,v2));
+                }
             }
         }
     }
     g
 }
+
+#[cfg(test)]
+mod tests {
+    use graph::{sigma,relu};
+
+    #[test]
+    fn test_sigma() {
+        assert_eq!(sigma(1000.0), 1.0f64);
+        assert_eq!(sigma(-899.0), 0.0f64);
+        assert_eq!(sigma(-1000.0), 0.0f64);
+    }
+
+    #[test]
+    fn test_relu() {
+        for i in -150..-50 {
+            assert_eq!(relu(i as f64), 0.0);
+        }
+        for i in 50..150 {
+            assert_eq!(relu(i as f64), i as f64);
+        }
+    }
+}
+

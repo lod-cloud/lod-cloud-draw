@@ -4,17 +4,20 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate clap;
+extern crate htmlescape;
 
 mod data;
 mod graph;
+mod settings;
 mod svg;
 mod tree;
 
 use clap::{Arg, App};
-use rustimization::minimizer::Funcmin;
-use std::fs::File;
 use data::Dataset;
+use rustimization::minimizer::Funcmin;
+use settings::Settings;
 use std::collections::HashMap;
+use std::fs::File;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -110,17 +113,17 @@ Gradient or lbfgsb = Limited BFGS)")
 
     model.spring = args.value_of("spring")
         .map(|s| { s.parse::<f64>().expect("Spring force not a decimal") })
-        .unwrap_or(0.001);
+        .unwrap_or(0.01);
 
     model.repulse = args.value_of("repulse")
         .map(|s| { s.parse::<f64>().expect("Repulsion force not a decimal") })
-        .unwrap_or(100.0);
+        .unwrap_or(10.0);
 
     model.repulse_dist = args.value_of("repulse_dist")
         .map(|s| { s.parse::<f64>().expect("Distance of bubbles is not a decimal") })
-        .unwrap_or(60.0);
+        .unwrap_or(50.0);
 
-    model.repulse_dist = args.value_of("repulse_rigidity")
+    model.repulse_rigidity = args.value_of("repulse_rigidity")
         .map(|s| { s.parse::<f64>().expect("Repulsion rigidity is not a decimal") })
         .unwrap_or(1.0);
 
@@ -134,7 +137,7 @@ Gradient or lbfgsb = Limited BFGS)")
 
     model.canvas_rigidity = args.value_of("canvas_rigidity")
         .map(|s| { s.parse::<f64>().expect("Canvas rigidity is not a decimal") })
-        .unwrap_or(10.0);
+        .unwrap_or(1.0);
 
     model.n_blocks = args.value_of("n_blocks")
         .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
@@ -155,6 +158,8 @@ Gradient or lbfgsb = Limited BFGS)")
     let data_filename = args.value_of("data").expect("Data not found (should not be reachable... this is a bug)");
 
     let data_file = File::open(data_filename).expect("Data file does not exist");
+
+    let settings = Settings::default();
 
     let data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("JSON error");
 
@@ -177,6 +182,7 @@ Gradient or lbfgsb = Limited BFGS)")
         fmin.minimize();
     }
 
-    svg::write_graph(&graph, &x, args.value_of("output").expect("Out file not given")).expect("Could not write graph");
+    svg::write_graph(&graph, &x, &data, &settings,
+                     args.value_of("output").expect("Out file not given")).expect("Could not write graph");
 }
 
