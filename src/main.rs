@@ -45,28 +45,33 @@ And s,r,w are tuning constants")
              .value_name("FORCE")
              .help("The value of the repulsion force")
              .takes_value(true))
-        .arg(Arg::with_name("well")
-             .short("w")
-             .long("well")
-             .value_name("FORCE")
-             .help("The value of the well boundary force")
-             .takes_value(true))
-        .arg(Arg::with_name("smin")
+        .arg(Arg::with_name("repulse_dist")
              .short("d")
              .long("distance")
              .value_name("PIXELS")
              .help("The minimal distance between bubbles")
              .takes_value(true))
+        .arg(Arg::with_name("repulse_rigidity")
+             .long("repulse-rigidity")
+             .value_name("FACTOR")
+             .help("The rigidity of repulsion between bubbles")
+             .takes_value(true))
         .arg(Arg::with_name("canvas")
+             .short("w")
+             .long("well")
+             .value_name("FORCE")
+             .help("The value of the well boundary force")
+             .takes_value(true))
+        .arg(Arg::with_name("canvas_size")
              .short("c")
              .long("canvas")
              .value_name("PIXELS")
              .help("The radius of the circle that the bubbles should be contained in")
              .takes_value(true))
-        .arg(Arg::with_name("well_wall")
-             .long("well-wall")
-             .value_name("EXPONENT")
-             .help("The strength of the well's walls. EXPERT ONLY")
+        .arg(Arg::with_name("canvas_rigidity")
+             .long("canvas-rigidity")
+             .value_name("FACTOR")
+             .help("The rigidity of the well")
              .takes_value(true))
         .arg(Arg::with_name("data")
              .index(1)
@@ -101,33 +106,40 @@ Gradient or lbfgsb = Limited BFGS)")
              .takes_value(true))
         .get_matches();
 
-    let spring = args.value_of("spring")
+    let mut model : graph::Model = Default::default();
+
+    model.spring = args.value_of("spring")
         .map(|s| { s.parse::<f64>().expect("Spring force not a decimal") })
         .unwrap_or(0.001);
 
-    let repulse = args.value_of("repulse")
+    model.repulse = args.value_of("repulse")
         .map(|s| { s.parse::<f64>().expect("Repulsion force not a decimal") })
         .unwrap_or(100.0);
 
-    let centre = args.value_of("centre")
-        .map(|s| { s.parse::<f64>().expect("Well force not a decimal") })
-        .unwrap_or(1.0);
-
-    let n_blocks = args.value_of("n_blocks")
-        .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
-        .unwrap_or(1);
-
-    let smin = args.value_of("smin")
+    model.repulse_dist = args.value_of("repulse_dist")
         .map(|s| { s.parse::<f64>().expect("Distance of bubbles is not a decimal") })
         .unwrap_or(60.0);
 
-    let canvas = args.value_of("canvas")
+    model.repulse_dist = args.value_of("repulse_rigidity")
+        .map(|s| { s.parse::<f64>().expect("Repulsion rigidity is not a decimal") })
+        .unwrap_or(1.0);
+
+    model.canvas = args.value_of("centre")
+        .map(|s| { s.parse::<f64>().expect("Well force not a decimal") })
+        .unwrap_or(1.0);
+
+    model.canvas_size = args.value_of("canvas_size")
         .map(|s| { s.parse::<f64>().expect("Canvas size is not a decimal") })
         .unwrap_or(1000.0);
 
-    let wall = args.value_of("well_wall")
-        .map(|s| { s.parse::<f64>().expect("Well wall is not a decimal") })
+    model.canvas_rigidity = args.value_of("canvas_rigidity")
+        .map(|s| { s.parse::<f64>().expect("Canvas rigidity is not a decimal") })
         .unwrap_or(10.0);
+
+    model.n_blocks = args.value_of("n_blocks")
+        .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
+        .unwrap_or(1);
+
 
     let algorithm = match args.value_of("algorithm") {
         Some("cg") => "cg",
@@ -149,15 +161,15 @@ Gradient or lbfgsb = Limited BFGS)")
     let graph = graph::build_graph(&data);
 
     let f = |x : &Vec<f64>| {
-        graph.cost(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
+        graph.cost(x, &model)
     };
     let g = |x : &Vec<f64>| {
-        graph.gradient(x, spring, repulse, smin, centre, wall, canvas, n_blocks) 
+        graph.gradient(x, &model)
     };
 
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
-    let mut x = tree::build_tree(&graph, smin * 5.0);
+    let mut x = tree::build_tree(&graph, model.repulse_dist * 5.0);
 
     {
         let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
