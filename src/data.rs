@@ -30,7 +30,7 @@ use serde::de::{Deserialize,Deserializer,Visitor};
 use serde;
 use std::fmt;
 
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Deserialize,Clone)]
 /// A dataset
 pub struct Dataset {
     pub description : HashMap<String, Option<String>>,
@@ -43,23 +43,23 @@ pub struct Dataset {
 }
 
 /// A link from a dataset to a target dataset
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Deserialize,Clone)]
 pub struct Link {
     pub target : String,
     pub value : String
 }
 
 #[derive(Debug,Clone)]
-pub struct IntLike(Option<i32>);
+pub struct IntLike(Option<i64>);
 
-impl From<i32> for IntLike {
-    fn from(x : i32) -> Self {
+impl From<i64> for IntLike {
+    fn from(x : i64) -> Self {
         IntLike(Some(x))
     }
 }
 
 impl IntLike {
-    pub fn get(&self) -> i32 {
+    pub fn get(&self) -> i64 {
         self.0.unwrap_or(0).clone()
     }
 }
@@ -84,60 +84,50 @@ impl<'de> Visitor<'de> for IntLikeVisitor {
     fn visit_i8<E>(self, value: i8) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(Some(value as i32)))
+        Ok(IntLike(Some(value as i64)))
     }
 
     fn visit_i32<E>(self, value: i32) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(Some(value)))
+        Ok(IntLike(Some(value as i64)))
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        use std::i32;
-        if value >= i32::MIN as i64 && value <= i32::MAX as i64 {
-            Ok(IntLike(Some(value as i32)))
-        } else {
-            Err(E::custom(format!("i32 out of range: {}", value)))
-        }
+        Ok(IntLike(Some(value)))
     }
 
     fn visit_u8<E>(self, value: u8) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(Some(value as i32)))
+        Ok(IntLike(Some(value as i64)))
     }
 
     fn visit_u32<E>(self, value: u32) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(Some(value as i32)))
+        Ok(IntLike(Some(value as i64)))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        use std::i32;
-        if value <= i32::MAX as u64 {
-            Ok(IntLike(Some(value as i32)))
-        } else {
-            Err(E::custom(format!("i32 out of range: {}", value)))
-        }
+        Ok(IntLike(Some(value as i64)))
     }
 
 
     fn visit_str<E>(self, value :&str) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(value.parse::<i32>().ok()))
+        Ok(IntLike(value.parse::<i64>().ok()))
     }
 
     fn visit_string<E>(self, value : String) -> Result<IntLike, E>
         where E: serde::de::Error
     {
-        Ok(IntLike(value.parse::<i32>().ok()))
+        Ok(IntLike(value.parse::<i64>().ok()))
     }
 
 

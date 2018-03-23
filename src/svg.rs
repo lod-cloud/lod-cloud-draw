@@ -11,17 +11,21 @@ use std::path::Path;
 /// Output a graph with a set of locations as an SVG file
 pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>, 
                                     data : &HashMap<String, Dataset>,
+                                    well_size : f64,
                                     settings : &Settings, out_file : P) -> Result<()> {
 
     let mut out = BufWriter::new(File::create(out_file)?);
-    let abs_max = list_abs_max(&loc) * 1.05;
+    let mut abs_max = list_abs_max(&loc) * 1.05;
+    if abs_max < well_size {
+        abs_max = well_size;
+    }
     
     writeln!(&mut out, "<svg
     xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\">",
         (abs_max as i32) * 2, (abs_max as i32) * 2)?;
     writeln!(&mut out, "{}", 
-"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/SVGPan.js\"/>
-  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/both.js\"/>
+//"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/SVGPan.js\"/>
+"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/both.js\"/>
   <style>
     circle { 
         stroke: #333;
@@ -59,15 +63,16 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
         stroke-width: 10;  
         stroke-dasharray:5,10,5;}
   </style>")?;
+  writeln!(&mut out, 
+"  <g transform=\"scale({})\">", abs_max/1250.0)?;
   writeln!(&mut out, "{}",
-"  <g transform=\"translate(-460,-390) scale(0.8)\">
-    <g id=\"legend\">
-      <text transform=\"translate(610,530)\" style=\"font-family:Verdana, Arial;font-size:200%;text-decoration:underline;\">Legend</text>")?;
-  let mut i = 545;
+"    <g id=\"legend\">
+      <text transform=\"translate(30,30)\" style=\"font-family:Verdana, Arial;font-size:200%;text-decoration:underline;\">Legend</text>")?;
+  let mut i = 45;
   for legend_entry in settings.legend.iter() {
       writeln!(&mut out,
-"      <rect width=\"310\" height=\"35\" style=\"fill:{}\" transform=\"translate(600,{})\"/>
-      <text transform=\"translate(610,{})\" style=\"font-family:Verdana, Arial;font-size:200%\">{}</text>", legend_entry.colour, i, i + 27, legend_entry.title)?;
+"      <rect width=\"310\" height=\"35\" style=\"fill:{}\" transform=\"translate(30,{})\"/>
+      <text transform=\"translate(35,{})\" style=\"font-family:Verdana, Arial;font-size:200%\">{}</text>", legend_entry.colour, i, i + 27, legend_entry.title)?;
       i += 40;
   }
   writeln!(&mut out, "{}",
@@ -105,7 +110,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
                  bubble_size(dataset),
                  loc[i * 2] + abs_max,
                  loc[i * 2 + 1] + abs_max,
-                 get_colour(&dataset.domain, settings), 
+                 get_colour(&dataset.domain, &dataset.keywords, settings), 
                  dataset.identifier,
                  loc[i * 2] + abs_max,
                  loc[i * 2 + 1] + abs_max,
@@ -132,11 +137,18 @@ fn list_abs_max(xs : &Vec<f64>) -> f64 {
     max
 }
 
-fn get_colour(domain : &str, settings : &Settings) -> String {
+fn get_colour(domain : &str, keywords : &Vec<String>, settings : &Settings) -> String {
     for e in settings.legend.iter() {
         if let Some(ref d) = e.domain {
             if domain == d {
                 return e.colour.to_string()
+            }
+        }
+        if let Some(ref tags) = e.keywords {
+            for t in tags.iter() {
+                if keywords.contains(t) {
+                    return e.colour.to_string()
+                }
             }
         }
     }

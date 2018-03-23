@@ -46,7 +46,8 @@
             "colour": "#d84d8c"
         }
     ],
-    "fixed_points": {"dbpedia": [0,0]},
-    "selection": "all"
+    "fixed_points": {"lexinfo": [0,0]},
+    "selection": "dataset",
+    "selected": "lexinfo"
 }
 

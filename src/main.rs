@@ -195,18 +195,37 @@ Gradient or lbfgsb = Limited BFGS)")
         _ => panic!("Unreachable")
     };
 
-    let graph = graph::build_graph(&data);
+    let graph = {
+        match settings.selection {
+            Some(ref ds) if ds == "dataset" && settings.selected.is_some() => {
+                graph::build_graph(&data).subgraph(
+                    &settings.selected.clone().unwrap(),
+                    settings.hops.unwrap_or(2))
+            },
+            Some(ref d) if d == "domain" && settings.selected.is_some() => {
+                let dom = settings.selected.clone().unwrap();
+                data = data.iter().filter(|kv| {
+                    kv.1.domain == dom
+                }).map(|x| (x.0.clone(), x.1.clone())).collect();
+                graph::build_graph(&data)
+            },
+            _ => graph::build_graph(&data)
+        }
+    };
 
     let f = |x : &Vec<f64>| {
         graph.cost(x, &model)
     };
     let g = |x : &Vec<f64>| {
-        graph.gradient(x, &model)
+        graph.zero_fixed_points(
+            graph.gradient(x, &model), &settings.fixed_points)
     };
 
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
-    let mut x = tree::build_tree(&graph, model.repulse_dist * 5.0);
+    let mut x = graph.set_fixed_points(
+        tree::build_tree(&graph, model.repulse_dist * 5.0),
+        &settings.fixed_points);
 
     {
         let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
@@ -214,7 +233,7 @@ Gradient or lbfgsb = Limited BFGS)")
         fmin.minimize();
     }
 
-    svg::write_graph(&graph, &x, &data, &settings,
+    svg::write_graph(&graph, &x, &data, model.canvas_size, &settings,
                      args.value_of("output").expect("Out file not given")).expect("Could not write graph");
 }
 

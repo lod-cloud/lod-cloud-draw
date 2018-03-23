@@ -60,9 +60,17 @@ use std::collections::HashMap;
 /// The Settings object
 #[derive(Clone,Debug,PartialEq,Deserialize)]
 pub struct Settings {
+    /// The legend (categories) to show
     pub legend : Vec<LegendEntry>,
+    /// If any datasets should occur at a fixed position
     pub fixed_points : HashMap<String, (f64, f64)>,
-    pub selection : Option<String>
+    /// Selection method: Either "all", "dataset" or "domain"
+    pub selection : Option<String>,
+    /// The value of the dataset/domain to be selected
+    pub selected : Option<String>,
+    /// The number of hops from a dataset in dataset mode
+    pub hops : Option<u32>
+
 }
 
 /// A single type of data to be included in the Legend
@@ -73,6 +81,8 @@ pub struct LegendEntry {
     /// The value of the `domain` property in data that corresponds to
     pub domain : Option<String>,
     /// The (HTML) colour of this legend
-    pub colour : String
+    pub colour : String,
+    /// The keywords that identify this domain
+    pub keywords : Option<Vec<String>>
 }
 

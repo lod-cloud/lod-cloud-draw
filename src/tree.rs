@@ -27,6 +27,10 @@ use std::collections::HashSet;
 /// let result = build_tree(&g, 10.0);
 /// ```
 pub fn build_tree(graph : &Graph, radius : f64) -> Vec<f64> {
+    if graph.n == 0 {
+        panic!("Graph is empty");
+    }
+
     let mut nodes = HashSet::new();
     nodes.extend(0..graph.n);
 

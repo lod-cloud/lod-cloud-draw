@@ -62,6 +62,67 @@ impl Graph {
         return None;
     }
 
+    /// Set the value of certain points
+    pub fn set_fixed_points(&self, mut loc : Vec<f64>, 
+                    fixed_points : &HashMap<String, (f64, f64)>) -> Vec<f64> {
+        for (key, &(x,y)) in fixed_points.iter() {
+            if let Some(id) = self.values.get(key) {
+                loc[id * 2] = x;
+                loc[id * 2 + 1] = y;
+            }
+        }
+        loc
+    }
+
+    /// Zero the gradients corresponding to fixed points 
+    pub fn zero_fixed_points(&self, mut loc : Vec<f64>, 
+                    fixed_points : &HashMap<String, (f64, f64)>) -> Vec<f64> {
+        for (key, _) in fixed_points.iter() {
+            if let Some(id) = self.values.get(key) {
+                loc[id * 2] = 0.0;
+                loc[id * 2 + 1] = 0.0;
+            }
+        }
+        loc
+    }
+
+    /// Return a subgraph that is at most X hops from a node
+    pub fn subgraph(&self, dataset : &str, hops : u32) -> Graph {
+        let mut graph = Graph::new();
+        if let Some(d) = self.values.get(dataset) {
+            self.subgraph2(*d, hops, &mut graph);
+
+        } else {
+            eprintln!("Subgraph function was given a dataset name not in the dataset
+            returning an empty graph");
+        }
+        graph
+    }
+
+    fn subgraph2(&self, d : usize, hops : u32, graph : &mut Graph) {
+        if hops > 0 {
+            for edge in self.edges.iter() {
+                if edge.src == d {
+                    let s = graph.add_vertex(&self.vertex_name(edge.src).unwrap());
+                    let t = graph.add_vertex(&self.vertex_name(edge.trg).unwrap());
+                    let e = Edge::new(s, t);
+                    if !graph.edges.contains(&e) {
+                        graph.edges.push(e)
+                    }
+                    self.subgraph2(edge.trg, hops - 1, graph);
+                } else if edge.trg == d {
+                    let s = graph.add_vertex(&self.vertex_name(edge.src).unwrap());
+                    let t = graph.add_vertex(&self.vertex_name(edge.trg).unwrap());
+                    let e = Edge::new(s, t);
+                    if !graph.edges.contains(&e) {
+                        graph.edges.push(e)
+                    }
+                    self.subgraph2(edge.src, hops - 1, graph);
+                }
+            }
+        }
+    }
+
 
     /// Estimate the cost of a given set of locations (`loc`) given parameters
     pub fn cost(&self, loc : &Vec<f64>, m : &Model) -> f64 {
