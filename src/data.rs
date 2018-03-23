@@ -38,7 +38,8 @@ pub struct Dataset {
     pub links : Vec<Link>,
     pub identifier : String,
     pub domain : String,
-    pub triples : IntLike
+    pub triples : IntLike,
+    pub keywords : Vec<String>
 }
 
 /// A link from a dataset to a target dataset
@@ -50,6 +51,12 @@ pub struct Link {
 
 #[derive(Debug,Clone)]
 pub struct IntLike(Option<i32>);
+
+impl From<i32> for IntLike {
+    fn from(x : i32) -> Self {
+        IntLike(Some(x))
+    }
+}
 
 impl IntLike {
     pub fn get(&self) -> i32 {

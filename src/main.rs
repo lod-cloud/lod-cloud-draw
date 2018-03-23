@@ -5,9 +5,11 @@ extern crate serde_json;
 extern crate serde_derive;
 extern crate clap;
 extern crate htmlescape;
+extern crate noisy_float;
 
 mod data;
 mod graph;
+mod ident;
 mod settings;
 mod svg;
 mod tree;
@@ -107,6 +109,10 @@ Gradient or lbfgsb = Limited BFGS)")
              .help("Apply an n x n blocking method to speed up the algorithm 
 (default=1, no blocking)")
              .takes_value(true))
+        .arg(Arg::with_name("ident")
+             .long("ident")
+             .value_name("none|neighbour|tags")
+             .help("The algorithm used to identify domain (bubble colours) of unidentified datasets"))
         .get_matches();
 
     let mut model : graph::Model = Default::default();
@@ -151,6 +157,15 @@ Gradient or lbfgsb = Limited BFGS)")
         None => "lbfgsb"
     };
 
+    let ident_algorithm = match args.value_of("ident") {
+        Some("none") => "none",
+        Some("tags") => "tags",
+        Some("neighbour") => "neighbour",
+        Some("neighbor") => "neighbour", // For Americans
+        Some(a) => panic!(format!("{} is not a supported identification algorithm", a)),
+        None => "none"
+    };
+
     let max_iters = args.value_of("max_iters")
         .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
@@ -161,7 +176,14 @@ Gradient or lbfgsb = Limited BFGS)")
 
     let settings = Settings::default();
 
-    let data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("JSON error");
+    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("JSON error");
+
+    match ident_algorithm {
+        "none" => {},
+        "neighbour" => ident::domain_by_most_neighbours(&mut data),
+        "tags" => ident::domain_by_keywords(&mut data),
+        _ => panic!("Unreachable")
+    };
 
     let graph = graph::build_graph(&data);
 

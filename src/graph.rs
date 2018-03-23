@@ -1,6 +1,6 @@
 //! The graph is a set of vertices and links between these vertices
 use data::Dataset;
-use std::collections::HashMap;
+use std::collections::{HashSet, HashMap};
 
 /// The parameters of the model
 #[derive(Default)]
@@ -302,14 +302,28 @@ fn relu(x : f64) -> f64 {
     }
 }
 
+
 /// Build the graph from the dataset
 pub fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
     let mut g = Graph::new();
+    let mut linked_datasets = HashSet::new();
+
     for dataset in data.values() {
-        if !dataset.links.is_empty() {
-            let v1 = g.add_vertex(&dataset.identifier);
+        if dataset.links.iter().any(|d| data.contains_key(&d.target)) {
+            linked_datasets.insert(dataset.identifier.clone());
             for link in dataset.links.iter() {
                 if data.contains_key(&link.target) {
+                    linked_datasets.insert(link.target.clone());
+                }
+            }
+        }
+    }
+ 
+    for dataset in data.values() {
+        if linked_datasets.contains(&dataset.identifier) {
+            let v1 = g.add_vertex(&dataset.identifier);
+            for link in dataset.links.iter() {
+                if linked_datasets.contains(&link.target) {
                     let v2 = g.add_vertex(&link.target);
                     g.edges.push(Edge::new(v1,v2));
                 }
