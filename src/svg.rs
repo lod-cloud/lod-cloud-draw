@@ -134,8 +134,10 @@ fn list_abs_max(xs : &Vec<f64>) -> f64 {
 
 fn get_colour(domain : &str, settings : &Settings) -> String {
     for e in settings.legend.iter() {
-        if domain == e.id {
-            return e.colour.to_string()
+        if let Some(ref d) = e.domain {
+            if domain == d {
+                return e.colour.to_string()
+            }
         }
     }
     "white".to_string()

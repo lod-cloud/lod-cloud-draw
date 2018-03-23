@@ -78,6 +78,12 @@ And s,r,w are tuning constants")
              .value_name("FACTOR")
              .help("The rigidity of the well")
              .takes_value(true))
+        .arg(Arg::with_name("settings")
+             .short("e")
+             .long("settings")
+             .value_name("settings.json")
+             .help("The JSON file containing the settings for the system")
+             .takes_value(true))
         .arg(Arg::with_name("data")
              .index(1)
              .required(true)
@@ -170,13 +176,17 @@ Gradient or lbfgsb = Limited BFGS)")
         .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
 
+    let settings_filename = args.value_of("settings").unwrap_or("lod-cloud-settings.json");
+
+    let settings_file = File::open(settings_filename).expect("Settings file does not exist");
+
+    let settings : Settings = serde_json::from_reader(settings_file).expect("Settings file is not valid JSON");
+    
     let data_filename = args.value_of("data").expect("Data not found (should not be reachable... this is a bug)");
 
     let data_file = File::open(data_filename).expect("Data file does not exist");
 
-    let settings = Settings::default();
-
-    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("JSON error");
+    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("Data contains a JSON error");
 
     match ident_algorithm {
         "none" => {},
