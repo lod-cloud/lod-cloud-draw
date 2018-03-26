@@ -1,0 +1,39 @@
+{
+    "legend": [
+        {
+            "title": "Corpora",
+            "keywords": ["corpus"],
+            "colour": "#3182BD"
+        },
+        {
+            "title": "Lexicons and Dictionaries",
+            "keywords": ["lexicon"],
+            "colour": "#31A354"
+        },
+        {
+            "title": "Terminologies, Thesauri and Knowledge Bases",
+            "keywords": ["thesaurus"],
+            "colour": "#A1D99B"
+        },
+        {
+            "title": "Linguistic Resource Metadata",
+            "keywords": ["metadata"],
+            "colour": "#F08080"
+        },
+        {
+            "title": "Linguistic Data Categories",
+            "keywords": ["linguistic"],
+            "colour": "#FD8C3B"
+        },
+        {
+            "title": "Typological Databases",
+            "keywords": ["typology"],
+            "colour": "#E6550D"
+        }
+    ],
+    "fixed_points": {},
+    "selection": "domain",
+    "selected": "social_networking"
+}
+        
+            
