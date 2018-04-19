@@ -69,3 +69,27 @@ And s,r,w are tuning constants
     <data.json>     The data of the LOD cloud
     <output.svg>    The path of the SVG file to write to
 
+## Settings
+
+In order to create a cloud diagram a settings file is required, this is a JSON 
+file as follows
+
+* `legend`: The legend (categories) to show; an array of legend entries (see below)
+* `fixed_points`: If any datasets should occur at a fixed position; dictionary
+    of strings to an array of two floating point numbers
+* `selection`: Selection method: Either "all", "dataset" or "domain"
+* `selected`: The value of the dataset/domain to be selected
+* `hops`: The number of hops from a dataset in dataset mode
+* `datasets`: Any datasets that must be included in the data
+* `rights_text`:  The description and copyright text
+* `logo_link`: The logo (link) (to be included in the bottom right of the image
+* `logo_width`: The logo width
+
+Legend entries consist of the following
+
+* `title`: The display title to be shown to the user
+* `domain`: The value of the `domain` property in data that corresponds to
+* `colour`: The (HTML) colour of this legend
+* `keywords`:  The keywords that identify this domain
+
+Examples of this may be found under the `clouds` folder
