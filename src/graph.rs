@@ -1,6 +1,7 @@
 //! The graph is a set of vertices and links between these vertices
 use data::Dataset;
 use std::collections::{HashSet, HashMap};
+use settings::Settings;
 
 /// The parameters of the model
 #[derive(Default)]
@@ -365,7 +366,7 @@ fn relu(x : f64) -> f64 {
 
 
 /// Build the graph from the dataset
-pub fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
+fn build_graph2(data : &HashMap<String, Dataset>) -> Graph {
     let mut g = Graph::new();
     let mut linked_datasets = HashSet::new();
 
@@ -393,6 +394,30 @@ pub fn build_graph(data : &HashMap<String, Dataset>) -> Graph {
     }
     g
 }
+
+
+/// Build the graph according to some selection principle
+pub fn build_graph(data : &HashMap<String, Dataset>, 
+                   settings : &Settings) -> Graph {
+    match settings.selection {
+        Some(ref ds) if ds == "dataset" && settings.selected.is_some() => {
+            build_graph2(&data).subgraph(
+                &settings.selected.clone().unwrap(),
+                settings.hops.unwrap_or(2))
+        },
+        Some(ref d) if d == "domain" && settings.selected.is_some() => {
+            let dom = settings.selected.clone().unwrap();
+            let data2 = data.iter().filter(|kv| {
+                kv.1.domain == dom ||
+                    settings.datasets.iter().map(|x| x.contains(kv.0)).
+                        next().unwrap_or(false)
+            }).map(|x| (x.0.clone(), x.1.clone())).collect();
+            build_graph2(&data2)
+        },
+        _ => build_graph2(&data)
+    }
+}
+ 
 
 #[cfg(test)]
 mod tests {

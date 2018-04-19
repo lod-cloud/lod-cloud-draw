@@ -28,12 +28,12 @@
         {
             "title": "Media",
             "domain": "media",
-            "colour": "#008080"
+            "colour": "#6372C7"
         },
         {
             "title": "Publications",
             "domain": "publications",
-            "colour": "#f6f3ce"
+            "colour": "#BCB582"
         },
         {
             "title": "Social Networking",
@@ -47,6 +47,8 @@
         }
     ],
     "fixed_points": {"dbpedia": [0,0]},
-    "selection": "all"
+    "selection": "all",
+    "rights_text": "The Linked Open Data Cloud from lod-cloud.net"
+
 }
 

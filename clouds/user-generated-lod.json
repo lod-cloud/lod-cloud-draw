@@ -1,39 +1,21 @@
 {
     "legend": [
         {
-            "title": "Corpora",
-            "keywords": ["corpus"],
-            "colour": "#3182BD"
+            "title": "SIOC",
+            "keywords": ["sioc"],
+            "colour": "#8b2453"
         },
         {
-            "title": "Lexicons and Dictionaries",
-            "keywords": ["lexicon"],
-            "colour": "#31A354"
-        },
-        {
-            "title": "Terminologies, Thesauri and Knowledge Bases",
-            "keywords": ["thesaurus"],
-            "colour": "#A1D99B"
-        },
-        {
-            "title": "Linguistic Resource Metadata",
-            "keywords": ["metadata"],
-            "colour": "#F08080"
-        },
-        {
-            "title": "Linguistic Data Categories",
-            "keywords": ["linguistic"],
-            "colour": "#FD8C3B"
-        },
-        {
-            "title": "Typological Databases",
-            "keywords": ["typology"],
-            "colour": "#E6550D"
+            "title": "Other",
+            "keywords": [],
+            "colour": "#d84d7c"
         }
     ],
     "fixed_points": {},
     "selection": "domain",
-    "selected": "user_generated"
+    "selected": "user_generated",
+    "datasets": ["dbpedia"],
+    "rights_text": "The User Generated Linked Open Data Cloud from lod-cloud.net"
 }
         
             

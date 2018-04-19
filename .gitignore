@@ -9,3 +9,6 @@ lod-data-small.json
 both.js
 lod-data
 lod.svg
+clouds/*.svg
+clouds/*.png
+scripts/

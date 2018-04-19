@@ -1,39 +1,27 @@
 {
     "legend": [
         {
-            "title": "Corpora",
-            "keywords": ["corpus"],
-            "colour": "#3182BD"
+            "title": "BioPortal",
+            "keywords": ["bioportal"],
+            "colour": "#e8ac67"
         },
         {
-            "title": "Lexicons and Dictionaries",
-            "keywords": ["lexicon"],
-            "colour": "#31A354"
+            "title": "Bio2RDF",
+            "keywords": ["bio2rdf"],
+            "colour": "#a972e8"
         },
         {
-            "title": "Terminologies, Thesauri and Knowledge Bases",
-            "keywords": ["thesaurus"],
-            "colour": "#A1D99B"
-        },
-        {
-            "title": "Linguistic Resource Metadata",
-            "keywords": ["metadata"],
-            "colour": "#F08080"
-        },
-        {
-            "title": "Linguistic Data Categories",
-            "keywords": ["linguistic"],
-            "colour": "#FD8C3B"
-        },
-        {
-            "title": "Typological Databases",
-            "keywords": ["typology"],
-            "colour": "#E6550D"
+            "title": "Other",
+            "keywords": [],
+            "colour": "#db777f"
         }
     ],
     "fixed_points": {},
     "selection": "domain",
-    "selected": "life_sciences"
+    "selected": "life_sciences",
+    "datasets": ["dbpedia"],
+    "rights_text": "The Life Sciences Linked Open Data Cloud from lod-cloud.net"
+
 }
         
             

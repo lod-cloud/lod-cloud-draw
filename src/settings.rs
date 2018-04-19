@@ -54,7 +54,7 @@
 //!    "fixed_points": {},
 //!    "selection": "all"
 //! }```
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 
 
 /// The Settings object
@@ -69,8 +69,15 @@ pub struct Settings {
     /// The value of the dataset/domain to be selected
     pub selected : Option<String>,
     /// The number of hops from a dataset in dataset mode
-    pub hops : Option<u32>
-
+    pub hops : Option<u32>,
+    /// Any datasets that must be included in the data
+    pub datasets : Option<HashSet<String>>,
+    /// The description and copy right text
+    pub rights_text : Option<String>,
+    /// The logo (link)
+    pub logo_link : Option<String>,
+    /// The logo width
+    pub logo_width : Option<usize>
 }
 
 /// A single type of data to be included in the Legend
