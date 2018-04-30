@@ -32,9 +32,9 @@ The cloud is created as a minimization of the following function:
 
 Where:
 
-  spring(e): Measures the length of a link in the cloud
-  repulse(v1, v2, d): Indicates if v1 and v2 are within a distance of d
-  well(v, c): Indicates if v is contained within a circle (well) of radius c
+* spring(e): Measures the length of a link in the cloud
+* repulse(v1, v2, d): Indicates if v1 and v2 are within a distance of d
+* well(v, c): Indicates if v is contained within a circle (well) of radius c
 
 And s,r,w are tuning constants
 
@@ -82,7 +82,7 @@ file as follows
 * `hops`: The number of hops from a dataset in dataset mode
 * `datasets`: Any datasets that must be included in the data
 * `rights_text`:  The description and copyright text
-* `logo_link`: The logo (link) (to be included in the bottom right of the image
+* `logo_link`: The logo (link) (to be included in the bottom right of the image)
 * `logo_width`: The logo width
 
 Legend entries consist of the following

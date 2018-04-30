@@ -107,8 +107,8 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
                 writeln!(&mut out, 
 "    <g id=\"{}\"
         onmouseover=\"mo(this)\" onmouseout=\"mleave(this)\">
-      <circle class=\"node\" r=\"{}\" cx=\"{}\" cy=\"{}\" fill=\"{}\"/>
-      <a class=\"bubble\" href=\"http://www.example.com/{}\">
+      <circle class=\"node\" r=\"{}\" cx=\"{}\" cy=\"{}\" fill=\"{}\"><title>{}</title></circle>
+      <a class=\"bubble\" href=\"https://lod-cloud.net/dataset/{}\">
           <text x=\"{}\" y=\"{}\">{}</text>
       </a>
     </g>",
@@ -117,6 +117,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
                  loc[i * 2] + abs_max,
                  loc[i * 2 + 1] + abs_max,
                  get_colour(&dataset.domain, &dataset.keywords, settings), 
+                 dataset.identifier,
                  dataset.identifier,
                  loc[i * 2] + abs_max,
                  loc[i * 2 + 1] + abs_max,
