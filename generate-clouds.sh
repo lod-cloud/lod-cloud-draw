@@ -22,4 +22,5 @@ cargo run --release -- lod-data.json clouds/lod-cloud.svg -n 10 -i 5000 --ident=
 
 cd clouds
 for f in *.svg ; do convert -density 300 -alpha off $f ${f%.svg}.png ; done
+convert -scale 40% lod-cloud.png lod-cloud-sm.jpg
 cd -

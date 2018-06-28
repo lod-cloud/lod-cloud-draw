@@ -12,3 +12,6 @@ lod.svg
 clouds/*.svg
 clouds/*.png
 scripts/
+clouds/lod-cloud-sm.jpg
+err
+out
