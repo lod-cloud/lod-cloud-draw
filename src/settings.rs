@@ -77,7 +77,9 @@ pub struct Settings {
     /// The logo (link)
     pub logo_link : Option<String>,
     /// The logo width
-    pub logo_width : Option<usize>
+    pub logo_width : Option<usize>,
+    /// The factor of the bubble size
+    pub bubble_size_factor : Option<f64>
 }
 
 /// A single type of data to be included in the Legend

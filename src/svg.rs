@@ -113,7 +113,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
       </a>
     </g>",
                  i,
-                 bubble_size(dataset),
+                 bubble_size(dataset, settings.bubble_size_factor.unwrap_or(10.0)),
                  loc[i * 2] + abs_max,
                  loc[i * 2 + 1] + abs_max,
                  get_colour(&dataset.domain, &dataset.keywords, settings), 
@@ -124,7 +124,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
                  encode_minimal(&shorten_text(&title)))?;
             },
             None => {
-                eprintln!("Dataset not in set: {}", 
+                eprintln!("Dataset not in set: {} (maybe `identifier` is incorrect?)", 
                           &dataset_name);
             }
         }
@@ -206,9 +206,9 @@ fn shorten_text(text : &str) -> String {
     }
 }
 
-fn bubble_size(dataset : &Dataset) -> String {
+fn bubble_size(dataset : &Dataset, factor : f64) -> String {
     let size = (dataset.triples.get() as f64) + 1.0;
-    format!("{:.1}", 15.0 + size.log(10.0))
+    format!("{:.1}", 15.0 + size.log(factor))
 }
 
 
