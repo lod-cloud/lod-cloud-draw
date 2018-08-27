@@ -11,7 +11,7 @@ lod-data
 lod.svg
 clouds/*.svg
 clouds/*.png
-scripts/
+scripts/most-frequent-tags.py
 clouds/lod-cloud-sm.jpg
 err
 out

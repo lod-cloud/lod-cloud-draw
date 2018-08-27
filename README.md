@@ -93,3 +93,13 @@ Legend entries consist of the following
 * `keywords`:  The keywords that identify this domain
 
 Examples of this may be found under the `clouds` folder
+
+## Data
+
+Data may be obtained from the following URL
+
+    https://lod-cloud.net/lod-data.json
+
+Rebuilding from the live version can be done with the following command
+
+    python3 scripts/get-data.py
