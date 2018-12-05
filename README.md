@@ -19,7 +19,7 @@ To use this library you must have gfortran installed in your pc
 
 * for windows use fortran compiler provided by mingw or TDM-GCC
 * for linux you can use the package manager to install gfortran
-* for Mac os you can install it form [here](http://hpc.sourceforge.net/) or 
+* for Mac os you can install it from [here](http://hpc.sourceforge.net/) or 
     [here](http://sourceforge.net/projects/hpc/files/hpc/g95/gfortran-mlion.tar.gz)
 
 ## Details
