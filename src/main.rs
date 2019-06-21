@@ -143,10 +143,6 @@ Gradient or lbfgsb = Limited BFGS)")
         .map(|s| { s.parse::<f64>().expect("Well force not a decimal") })
         .unwrap_or(1.0);
 
-    model.canvas_size = args.value_of("canvas_size")
-        .map(|s| { s.parse::<f64>().expect("Canvas size is not a decimal") })
-        .unwrap_or(1000.0);
-
     model.canvas_rigidity = args.value_of("canvas_rigidity")
         .map(|s| { s.parse::<f64>().expect("Canvas rigidity is not a decimal") })
         .unwrap_or(1.0);
@@ -155,6 +151,9 @@ Gradient or lbfgsb = Limited BFGS)")
         .map(|s| { s.parse::<usize>().expect("N Blocks not a positive integer") })
         .unwrap_or(1);
 
+    model.canvas_size = args.value_of("canvas_size")
+        .map(|s| { s.parse::<f64>().expect("Canvas size is not a decimal") })
+        .unwrap_or(-1.0); // then we set this later
 
     let algorithm = match args.value_of("algorithm") {
         Some("cg") => "cg",
@@ -198,6 +197,10 @@ Gradient or lbfgsb = Limited BFGS)")
     let graph = graph::build_graph(&data, &settings);
 
     eprintln!("{} nodes in graph", graph.n);
+
+    if model.canvas_size <= 0.0 {
+        model.canvas_size = model.repulse_dist * (2.5 + 0.5 * (graph.n as f64).sqrt());
+    }
 
     let f = |x : &Vec<f64>| {
         graph.cost(x, &model)

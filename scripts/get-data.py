@@ -145,6 +145,9 @@ if __name__ == "__main__":
                     check_sparql(sparql["access_url"], sparql)
                     print()
 
+        if "domain" in dataset and dataset["domain"] == "cross-domain":
+            dataset["domain"] = "cross_domain"
+
         print()
 
     data = dict(data)
