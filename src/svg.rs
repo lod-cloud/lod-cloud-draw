@@ -148,7 +148,7 @@ function mleave(elem) {
 "    <g id=\"{}\"
         onmouseover=\"mo(this)\" onmouseout=\"mleave(this)\">
       <circle class=\"node\" r=\"{}\" cx=\"{}\" cy=\"{}\" fill=\"{}\"><title>{}</title></circle>
-      <a class=\"bubble\" href=\"https://lod-cloud.net/dataset/{}\">
+      <a class=\"bubble\" href=\"https://lod-cloud.net/dataset/{}\" target=\"_blank\">
           <text x=\"{}\" y=\"{}\">{}</text>
       </a>
     </g>",
