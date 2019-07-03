@@ -135,10 +135,33 @@ fn calculate_loc(loc : &mut Vec<f64>, parent : usize, nodes : &mut HashSet<usize
         loc[child * 2] = loc[parent * 2] + radius * (ainitial + a * astep).cos();
         loc[child * 2 + 1] = loc[parent * 2 + 1] + radius * (ainitial + a * astep).sin();
 
-        calculate_loc(loc, *child, nodes, edges, graph, radius);
+        //calculate_loc(loc, *child, nodes, edges, graph, radius);
         a += 1.0;
     } 
+    let new_children = pseudo_shuffle(children);
 
+    for &child in new_children.iter() {
+        calculate_loc(loc, *child, nodes, edges, graph, radius);
+    }
+
+}
+
+fn pseudo_shuffle(mut init : Vec<&usize>) -> Vec<&usize> {
+    let mut new_list = Vec::new();
+    
+    let mut i = 0;
+    while !init.is_empty() {
+        new_list.push(init.remove(i));
+        if init.len() % 13 == 0 {
+            i += 7
+        } else {
+            i += 13
+        }
+        if init.len() > 0 {
+            i = i % init.len();
+        }
+    }
+    new_list
 }
 
 #[cfg(test)]

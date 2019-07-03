@@ -30,7 +30,47 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
         (abs_max as usize) * 2, (abs_max as usize) * 2 + LINE_HEIGHT)?;
     writeln!(&mut out, "{}", 
 //"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/SVGPan.js\"/>
-"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/both.js\"/>
+"<script type=\"text/javascript\">
+function mo(elem) {    
+    var  line =document.getElementsByTagName(\"line\")
+ 
+  elem.setAttribute(\"class\",\"circle-active\");
+    for(i = 0; i < line.length; i++) {                                          
+                                                                                
+        if(line[i].getAttributeNode(\"targetId\").value === elem.id) {            
+            line[i].setAttribute(\"class\",\"link-activeIncoming\");
+            document.getElementById(line[i].getAttributeNode(\"sourceId\").value).setAttribute(\"class\",\"circle-active\");
+
+        } 
+        if(line[i].getAttributeNode(\"sourceId\").value === elem.id) {            
+            line[i].setAttribute(\"class\",\"link-activeOutgoung\");
+            document.getElementById(line[i].getAttributeNode(\"targetId\").value).setAttribute(\"class\",\"circle-active\");
+
+        }
+        if((line[i].getAttributeNode(\"targetId\").value === elem.id)&&(line[i].getAttributeNode(\"sourceId\").value === elem.id)) {            
+            line[i].setAttribute(\"class\",\"link-activeBoth\");
+             document.getElementById(line[i].getAttributeNode(\"targetId\").value).setAttribute(\"class\",\"circle-active\");
+             document.getElementById(line[i].getAttributeNode(\"sourceId\").value).setAttribute(\"class\",\"circle-active\");
+        }                                                                              
+    }                                                                           
+}
+
+function mleave(elem) {                   
+    elem.setAttribute(\"class\",\"circle-pasive\");                                      
+    var line = document.getElementsByTagName(\"line\");                           
+    for(i = 0; i < line.length; i++) {                                          
+                                                                                
+        if(line[i].getAttributeNode(\"targetId\").value === elem.id) {     
+        document.getElementById(line[i].getAttributeNode(\"sourceId\").value).setAttribute(\"class\",\"circle-pasive\");       
+            line[i].setAttribute(\"class\",\"link\");       
+        }
+        if(line[i].getAttributeNode(\"sourceId\").value === elem.id) {            
+            document.getElementById(line[i].getAttributeNode(\"targetId\").value).setAttribute(\"class\",\"circle-pasive\");
+            line[i].setAttribute(\"class\",\"link\");       
+        }                                                                          
+    }                                                                           
+}
+</script>
   <style>
     circle { 
         stroke: #333;

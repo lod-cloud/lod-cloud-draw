@@ -6,6 +6,7 @@ extern crate serde_derive;
 extern crate clap;
 extern crate htmlescape;
 extern crate noisy_float;
+extern crate rand;
 
 mod data;
 mod graph;
@@ -20,6 +21,7 @@ use rustimization::minimizer::Funcmin;
 use settings::Settings;
 use std::collections::HashMap;
 use std::fs::File;
+use rand::Rng;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -119,6 +121,9 @@ Gradient or lbfgsb = Limited BFGS)")
              .long("ident")
              .value_name("none|neighbour|tags")
              .help("The algorithm used to identify domain (bubble colours) of unidentified datasets"))
+        .arg(Arg::with_name("random_init")
+             .long("random")
+             .help("Use random initialization instead of the (superior) tree algorithm"))
         .get_matches();
 
     let mut model : graph::Model = Default::default();
@@ -212,9 +217,18 @@ Gradient or lbfgsb = Limited BFGS)")
 
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
-    let mut x = graph.set_fixed_points(
+    let mut rng = rand::thread_rng();
+    let mut x = if args.is_present("random_init") {
+        graph.set_fixed_points(
+        (0..(graph.n * 2)).map(|_| {
+            rng.gen_range(-5.0 * model.canvas_size, 5.0 * model.canvas_size)
+        }).collect(),
+        &settings.fixed_points)
+    } else {
+        graph.set_fixed_points(
         tree::build_tree(&graph, model.repulse_dist * 5.0),
-        &settings.fixed_points);
+        &settings.fixed_points)
+    };
 
     {
         let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
