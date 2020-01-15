@@ -180,7 +180,7 @@ Gradient or lbfgsb = Limited BFGS)")
         .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
 
-    let settings_filename = args.value_of("settings").unwrap_or("lod-cloud-settings.json");
+    let settings_filename = args.value_of("settings").unwrap_or("clouds/lod-cloud-settings.json");
 
     let settings_file = File::open(settings_filename).expect("Settings file does not exist");
 

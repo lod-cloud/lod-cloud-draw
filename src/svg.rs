@@ -30,7 +30,7 @@ pub fn write_graph<P : AsRef<Path>>(graph : &Graph, loc : &Vec<f64>,
         (abs_max as usize) * 2, (abs_max as usize) * 2 + LINE_HEIGHT)?;
     writeln!(&mut out, "{}", 
 //"  <script xmlns:xlink=\"http://www.w3.org/1999/xlink\" xlink:href=\"http://lod-cloud.net/versions/2017-08-22/SVGPan.js\"/>
-"<script type=\"text/javascript\">
+"<script type=\"text/javascript\"><![CDATA[
 function mo(elem) {    
     var  line =document.getElementsByTagName(\"line\")
  
@@ -70,7 +70,7 @@ function mleave(elem) {
         }                                                                          
     }                                                                           
 }
-</script>
+]]></script>
   <style>
     circle { 
         stroke: #333;
