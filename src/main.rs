@@ -15,13 +15,15 @@ mod settings;
 mod svg;
 mod tree;
 
-use clap::{Arg, App};
+use clap::{Arg, App, ArgMatches};
 use data::Dataset;
 use rustimization::minimizer::Funcmin;
 use settings::Settings;
 use std::collections::HashMap;
 use std::fs::File;
 use rand::Rng;
+use std::process::exit;
+
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -126,6 +128,17 @@ Gradient or lbfgsb = Limited BFGS)")
              .help("Use random initialization instead of the (superior) tree algorithm"))
         .get_matches();
 
+    match do_main(args) {
+        Err(e) => {
+            eprintln!("{}", e);
+            exit(-1)
+        },
+        Ok(_) => {}
+    }
+}
+
+fn do_main(args : ArgMatches) -> Result<(),&'static str> {
+
     let mut model : graph::Model = Default::default();
 
     model.spring = args.value_of("spring")
@@ -180,17 +193,17 @@ Gradient or lbfgsb = Limited BFGS)")
         .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
 
-    let settings_filename = args.value_of("settings").unwrap_or("clouds/lod-cloud-settings.json");
+    let settings_filename = args.value_of("settings").ok_or("clouds/lod-cloud-settings.json")?;
 
-    let settings_file = File::open(settings_filename).expect("Settings file does not exist");
+    let settings_file = File::open(settings_filename).map_err(|_| "Settings file does not exist (specify with -e)")?;
 
-    let settings : Settings = serde_json::from_reader(settings_file).expect("Settings file is not valid JSON");
+    let settings : Settings = serde_json::from_reader(settings_file).map_err(|_| "Settings file is not valid JSON")?;
     
     let data_filename = args.value_of("data").expect("Data not found (should not be reachable... this is a bug)");
 
-    let data_file = File::open(data_filename).expect("Data file does not exist");
+    let data_file = File::open(data_filename).map_err(|_| "Data file does not exist")?;
 
-    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).expect("Data contains a JSON error");
+    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).map_err(|_| "Data contains a JSON error")?;
 
     match ident_algorithm {
         "none" => {},
@@ -238,5 +251,7 @@ Gradient or lbfgsb = Limited BFGS)")
 
     svg::write_graph(&graph, &x, &data, model.canvas_size, &settings,
                      args.value_of("output").expect("Out file not given")).expect("Could not write graph");
+
+    Ok(())
 }
 
