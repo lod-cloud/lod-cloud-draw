@@ -7,27 +7,31 @@ import sys, traceback
 from itertools import islice
 import codecs
 
-def check_url(url, entry, skip_laundromat):
-    if not skip_laundromat:
-        try:
-            soup = BeautifulSoup(
-                    urlopen(
-                    "http://lodlaundromat.org/sparql/?"
-                    + urlencode({
-                        "query": "PREFIX llo: <http://lodlaundromat.org/ontology/> SELECT DISTINCT ?dataset WHERE {?dataset llo:url <" +
-                        url + ">}" })), features="xml")
-            uris = soup.find_all("uri")
-        except:
-            traceback.print_exc()
-            uris = []
+ipfs_hashes = {
+        line.strip().split(",")[1]: line.strip().split(",")[0]
+        for line in open("ipfs-hashes.csv").readlines() }
+
+def check_url(url, entry):
+#    if not skip_laundromat:
+    if url in ipfs_hashes:
+        uris = ["ipfs:" + ipfs_hashes[url]]
+#        try:
+#            soup = BeautifulSoup(
+#                    urlopen(
+#                    "http://lodlaundromat.org/sparql/?"
+#                    + urlencode({
+#                        "query": "PREFIX llo: <http://lodlaundromat.org/ontology/> SELECT DISTINCT ?dataset WHERE {?dataset llo:url <" +
+#                        url + ">}" })), features="xml")
+#            uris = soup.find_all("uri")
+#        except:
+#            traceback.print_exc()
+#            uris = []
     else:
         uris = []
     if len(uris) > 0:
-        print("%s => %s" % (url, uris[0].text))
+        print("%s => %s" % (url, uris[0]))
         entry.update({
-            "mirror":[
-                "http://download.lodlaundromat.org/" + uris[0].text[34:]
-            ],
+            "mirror": uris,
             "status": "OK"
         })
     else:
@@ -104,7 +108,7 @@ def check_sparql(url, entry):
 
 
 if __name__ == "__main__":
-    skip_laundromat = True
+    #skip_laundromat = True
     reader = codecs.getreader("utf-8")
     data = json.load(reader(urlopen("https://lod-cloud.net/extract/datasets")))
 
@@ -121,7 +125,7 @@ if __name__ == "__main__":
         print()
 
         for full_download in dataset["full_download"]:
-           check_url(full_download["download_url"], full_download, skip_laundromat)
+           check_url(full_download["download_url"], full_download)
            print()
 
         print()
@@ -130,7 +134,7 @@ if __name__ == "__main__":
         if "other_download" in dataset:
             for other_download in dataset["other_download"]:
                 if "access_url" in other_download:
-                    check_url(other_download["access_url"], other_download, skip_laundromat)
+                    check_url(other_download["access_url"], other_download)
                     print()
 
         if "example" in dataset:
