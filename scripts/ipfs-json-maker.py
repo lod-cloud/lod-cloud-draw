@@ -38,5 +38,5 @@ print(counter)
 
 
 
-with open("ipfs-lod.json","w") as out:
+with open("../clouds/ipfs-lod.json","w") as out:
         out.write(json.dumps(newDict, indent=2))
