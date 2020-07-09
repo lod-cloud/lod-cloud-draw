@@ -1,10 +1,6 @@
 import json
 from urllib.request import urlopen
-#from urllib.parse import urlencode
-#from bs4 import BeautifulSoup
-#import requests
-#import sys, traceback
-#from itertools import islice
+
 import codecs
 
 
