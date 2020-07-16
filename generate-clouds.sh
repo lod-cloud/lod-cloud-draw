@@ -21,6 +21,10 @@ cargo run --release -- lod-data.json clouds/user-generated-lod.svg -n 10 -i 5000
 cargo run --release -- lod-data.json clouds/lod-cloud.svg -n 10 -i 5000 --ident=neighbour --settings=clouds/lod-cloud-settings.json
 
 cd clouds
-for f in *.svg ; do convert -density 300 -alpha off $f ${f%.svg}.png ; done
+for f in *.svg 
+do 
+    sed -i 's/<title>.*<\/title>//' $f
+    convert -density 300 -alpha off $f ${f%.svg}.png 
+done
 convert -scale 40% lod-cloud.png lod-cloud-sm.jpg
 cd -

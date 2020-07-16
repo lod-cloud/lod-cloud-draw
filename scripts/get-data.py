@@ -12,6 +12,7 @@ ipfs_hashes = {
         for line in open("ipfs-hashes.csv").readlines() }
 
 def check_url(url, entry):
+    entry["mirror"] = []
 #    if not skip_laundromat:
     if url in ipfs_hashes:
         uris = ["ipfs:" + ipfs_hashes[url]]

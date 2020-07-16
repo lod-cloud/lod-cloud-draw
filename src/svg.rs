@@ -113,7 +113,7 @@ function mleave(elem) {
   let leg_len = legend_length(settings);
   writeln!(&mut out, "{}",
 "    <g id=\"legend\">
-      <text transform=\"translate(30,30)\" style=\"font-family:Verdana, Arial;font-size:200%;text-decoration:underline;\">Legend</text>")?;
+      <text transform=\"translate(30,30)\" style=\"font-family:Verdana, Arial, DejaVu Sans;font-size:200%;text-decoration:underline;\">Legend</text>")?;
   let mut i = 45;
   for legend_entry in settings.legend.iter() {
       writeln!(&mut out,
