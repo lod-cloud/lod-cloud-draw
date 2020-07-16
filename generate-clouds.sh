@@ -20,6 +20,8 @@ cargo run --release -- lod-data.json clouds/user-generated-lod.svg -n 10 -i 5000
 
 cargo run --release -- lod-data.json clouds/lod-cloud.svg -n 10 -i 5000 --ident=neighbour --settings=clouds/lod-cloud-settings.json
 
+cargo run --release -- ipfs-lod.json clouds/ipfs-lod.svg -n 10 -i 5000 -c 350 --ident=neighbour --settings=clouds/lod-cloud-settings.json
+
 cd clouds
 for f in *.svg 
 do 
