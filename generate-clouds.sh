@@ -25,8 +25,7 @@ cargo run --release -- ipfs-lod.json clouds/ipfs-lod.svg -n 10 -i 5000 -c 350 --
 cd clouds
 for f in *.svg 
 do 
-    sed -i 's/<title>.*<\/title>//' $f
-    convert -density 300 -alpha off $f ${f%.svg}.png 
+    inkscape -b white -d 300 -e ${f%.svg}.png $f
 done
 convert -scale 40% lod-cloud.png lod-cloud-sm.jpg
 cd -
