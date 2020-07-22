@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+python scripts/ipfs-json-maker.py
+
 cargo run --release -- lod-data.json clouds/cross-domain-lod.svg -n 10 -i 5000 -c 350 --ident=neighbour --settings=clouds/cross-domain-lod.json
 
 cargo run --release -- lod-data.json clouds/geography-lod.svg -n 10 -i 5000 -c 300 --ident=neighbour --settings=clouds/geography-lod.json
