@@ -1,6 +1,7 @@
 import json
 from urllib.request import urlopen
 import codecs
+import os
 
 
 reader = codecs.getreader("utf-8")
@@ -33,5 +34,5 @@ print(counter)
 
 
 
-with open("../clouds/ipfs-lod.json","w") as out:
+with open(os.path.dirname(os.path.abspath(__file__)) + "/../ipfs-lod.json","w") as out:
         out.write(json.dumps(newDict, indent=2))
