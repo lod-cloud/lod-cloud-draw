@@ -16,3 +16,8 @@ clouds/lod-cloud-sm.jpg
 err
 out
 tmp*
+
+btc-data.json
+btc-lod-cloud.png
+btc-lod-cloud-sm.png
+ipfs-lod.json
