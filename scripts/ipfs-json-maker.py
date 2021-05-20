@@ -33,5 +33,5 @@ print(counter)
 
 
 
-with open(os.path.dirname(os.path.abspath(__file__)) + "/../ipfs-lod.json","w") as out:
+with open(os.path.dirname(os.path.abspath(__file__)) + "../ipfs-lod.json","w") as out:
         out.write(json.dumps(newDict, indent=2))
