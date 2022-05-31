@@ -193,7 +193,7 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
 
-    let settings_filename = args.value_of("settings").ok_or("clouds/lod-cloud-settings.json")?;
+    let settings_filename = args.value_of("settings").unwrap_or("clouds/lod-cloud-settings.json");
 
     let settings_file = File::open(settings_filename).map_err(|_| "Settings file does not exist (specify with -e)")?;
 
