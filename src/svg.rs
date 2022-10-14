@@ -1,9 +1,9 @@
 //! Methods for outputting graphs as SVG
-use data::Dataset;
-use graph::Graph;
+use crate::data::Dataset;
+use crate::graph::Graph;
 use htmlescape::encode_minimal;
 use noisy_float::prelude::*;
-use settings::Settings;
+use crate::settings::Settings;
 use std::cmp::{min, max};
 use std::collections::HashMap;
 use std::fs::File;

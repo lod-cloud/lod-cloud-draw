@@ -1,5 +1,5 @@
 //! Code used to identify the domains (bubble colours) of the bubbles
-use data::Dataset;
+use crate::data::Dataset;
 use std::collections::HashMap;
 use noisy_float::prelude::*;
 

@@ -1,7 +1,7 @@
 //! The graph is a set of vertices and links between these vertices
-use data::Dataset;
+use crate::data::Dataset;
 use std::collections::{HashSet, HashMap};
-use settings::Settings;
+use crate::settings::Settings;
 
 /// The parameters of the model
 #[derive(Default)]
@@ -47,7 +47,7 @@ impl Graph {
         if !self.values.contains_key(name) {
             self.values.insert(name.to_string(), self.n);
             self.n += 1;
-            (self.n - 1)
+            self.n - 1
         } else {
             self.values[name]
         }
