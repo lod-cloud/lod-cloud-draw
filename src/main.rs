@@ -1,4 +1,4 @@
-extern crate rustimization;
+extern crate liblbfgs;
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
@@ -16,14 +16,13 @@ mod svg;
 mod tree;
 
 use clap::{Arg, App, ArgMatches};
-use data::Dataset;
-use rustimization::minimizer::Funcmin;
-use settings::Settings;
+use crate::data::Dataset;
+use crate::settings::Settings;
 use std::collections::HashMap;
 use std::fs::File;
 use rand::Rng;
 use std::process::exit;
-
+use liblbfgs::lbfgs;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -102,9 +101,8 @@ And s,r,w are tuning constants")
              .takes_value(true))
         .arg(Arg::with_name("algorithm")
              .long("algorithm")
-             .value_name("cg|lbfgsb")
-             .help("The algorithm used to find the cloud diagram (cg=Conjugate
-Gradient or lbfgsb = Limited BFGS)")
+             .value_name("lbfgs|owlqn")
+             .help("The algorithm used to find the cloud diagram (lbfgs = Limited BFGS, owlqn = Orthant-Wise Limited-memory Quasi-Newton)")
              .takes_value(true))
         .arg(Arg::with_name("max_iters")
              .short("i")
@@ -174,9 +172,9 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         .unwrap_or(-1.0); // then we set this later
 
     let algorithm = match args.value_of("algorithm") {
-        Some("cg") => "cg",
         Some("lbfgsb") => "lbfgsb",
-        Some(a) => panic!(format!("{} is not a supported algorithm", a)),
+        Some("owlqn") => "owlqn",
+        Some(a) => panic!("{} is not a supported algorithm", a),
         None => "lbfgsb"
     };
 
@@ -185,12 +183,12 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         Some("tags") => "tags",
         Some("neighbour") => "neighbour",
         Some("neighbor") => "neighbour", // For Americans
-        Some(a) => panic!(format!("{} is not a supported identification algorithm", a)),
+        Some(a) => panic!("{} is not a supported identification algorithm", a),
         None => "none"
     };
 
     let max_iters = args.value_of("max_iters")
-        .map(|s| { s.parse::<u32>().expect("Iterations is not an integer") })
+        .map(|s| { s.parse::<usize>().expect("Iterations is not an integer") })
         .unwrap_or(10000);
 
     let settings_filename = args.value_of("settings").unwrap_or("clouds/lod-cloud-settings.json");
@@ -228,6 +226,15 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
             graph.gradient(x, &model), &settings.fixed_points)
     };
 
+    let evaluate = |x: &[f64], gx: &mut [f64]| {
+        let x_vec = x.to_vec();
+        let fx = f(&x_vec);
+        let gx_eval = g(&x_vec);
+        for i in 1..gx_eval.len() {
+            gx[i] = gx_eval[i];
+        }
+        Ok(fx)
+    };
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
     let mut rng = rand::thread_rng();
@@ -244,9 +251,23 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
     };
 
     {
-        let mut fmin = Funcmin::new(&mut x, &f, &g, algorithm);
-        fmin.max_iteration(max_iters);
-        fmin.minimize();
+        let prb = if algorithm == "lbfgs" {
+            lbfgs()
+            .with_max_iterations(max_iters)
+        } else {
+            lbfgs()
+            .with_max_iterations(max_iters)
+            .with_orthantwise(1.0, 0, 99) // enable OWL-QN
+        };
+        prb.minimize(
+                &mut x,                   // input variables
+                evaluate,                 // define how to evaluate function
+                |prgr| {                  // define progress monitor
+                    println!("iter: {:}", prgr.niter);
+                    false                 // returning true will cancel optimization
+                }
+                )
+            .expect("lbfgs owlqn minimize");
     }
 
     svg::write_graph(&graph, &x, &data, model.canvas_size, &settings,

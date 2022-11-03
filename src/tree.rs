@@ -3,7 +3,7 @@
 //! 1. Find the most connected central node.
 //! 2. Fan all nodes connected to the centre in a 360° arc.
 //! 3. Recursively fan each other node out in a 180° arc.
-use graph::Graph;
+use crate::graph::Graph;
 use std::f64::consts::PI;
 use std::collections::HashSet;
 

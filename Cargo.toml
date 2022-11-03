@@ -2,9 +2,9 @@
 name = "lod-cloud-draw"
 version = "0.1.0"
 authors = ["John P. McCrae <john@mccr.ae>"]
+edition = "2021"
 
 [dependencies]
-rustimization = "0.1.1"
 clap = "2.31.1"
 serde = "*"
 serde_json = "*"
@@ -12,3 +12,4 @@ serde_derive = "*"
 htmlescape = "*"
 noisy_float = "*"
 rand = "*"
+liblbfgs = "0.1.0"
