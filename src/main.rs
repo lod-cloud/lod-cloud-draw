@@ -23,6 +23,7 @@ use std::fs::File;
 use rand::Rng;
 use std::process::exit;
 use liblbfgs::lbfgs;
+use std::io::Write;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -195,13 +196,19 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
 
     let settings_file = File::open(settings_filename).map_err(|_| "Settings file does not exist (specify with -e)")?;
 
-    let settings : Settings = serde_json::from_reader(settings_file).map_err(|_| "Settings file is not valid JSON")?;
+    let settings : Settings = serde_json::from_reader(settings_file).map_err(|e| {
+        eprintln!("{:?}", e);
+        "Settings file is not valid JSON"
+    })?;
     
     let data_filename = args.value_of("data").expect("Data not found (should not be reachable... this is a bug)");
 
     let data_file = File::open(data_filename).map_err(|_| "Data file does not exist")?;
 
-    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).map_err(|_| "Data contains a JSON error")?;
+    let mut data : HashMap<String,Dataset> = serde_json::from_reader(data_file).map_err(|e| {
+        eprintln!("{:?}", e);
+        "Data contains a JSON error"
+    })?;
 
     match ident_algorithm {
         "none" => {},
@@ -226,11 +233,12 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
             graph.gradient(x, &model), &settings.fixed_points)
     };
 
+
     let evaluate = |x: &[f64], gx: &mut [f64]| {
         let x_vec = x.to_vec();
         let fx = f(&x_vec);
         let gx_eval = g(&x_vec);
-        for i in 1..gx_eval.len() {
+        for i in 1..gx_eval.len() { // why 1 here??
             gx[i] = gx_eval[i];
         }
         Ok(fx)
@@ -251,23 +259,28 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
     };
 
     {
-        let prb = if algorithm == "lbfgs" {
+        let prb = if algorithm == "lbfgsb" {
             lbfgs()
             .with_max_iterations(max_iters)
         } else {
             lbfgs()
             .with_max_iterations(max_iters)
             .with_orthantwise(1.0, 0, 99) // enable OWL-QN
+            .with_linesearch_min_step(1e-50f64)
         };
         prb.minimize(
                 &mut x,                   // input variables
                 evaluate,                 // define how to evaluate function
                 |prgr| {                  // define progress monitor
-                    println!("iter: {:}", prgr.niter);
+                    if prgr.niter % 100 == 99 {
+                        print!(".");
+                        std::io::stdout().flush().expect("STDOUT error");
+                    }
                     false                 // returning true will cancel optimization
                 }
                 )
             .expect("lbfgs owlqn minimize");
+        println!("");
     }
 
     svg::write_graph(&graph, &x, &data, model.canvas_size, &settings,
