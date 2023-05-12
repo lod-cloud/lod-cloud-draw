@@ -1,4 +1,5 @@
-extern crate liblbfgs;
+extern crate argmin;
+extern crate ndarray;
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
@@ -22,8 +23,11 @@ use std::collections::HashMap;
 use std::fs::File;
 use rand::Rng;
 use std::process::exit;
-use liblbfgs::lbfgs;
 use std::io::Write;
+use argmin::core::observers::{ObserverMode, SlogLogger};
+use argmin::core::{CostFunction, Error, Executor, Gradient};
+use argmin::solver::linesearch::MoreThuenteLineSearch;
+use argmin::solver::quasinewton::LBFGS;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -241,7 +245,7 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         for i in 1..gx_eval.len() { // why 1 here??
             gx[i] = gx_eval[i];
         }
-        Ok(fx)
+        fx
     };
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
@@ -249,7 +253,7 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
     let mut x = if args.is_present("random_init") {
         graph.set_fixed_points(
         (0..(graph.n * 2)).map(|_| {
-            rng.gen_range(-5.0 * model.canvas_size, 5.0 * model.canvas_size)
+            rng.gen_range((-5.0 * model.canvas_size)..(5.0 * model.canvas_size))
         }).collect(),
         &settings.fixed_points)
     } else {
@@ -258,34 +262,73 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         &settings.fixed_points)
     };
 
-    {
-        let prb = if algorithm == "lbfgsb" {
-            lbfgs()
-            .with_max_iterations(max_iters)
-        } else {
-            lbfgs()
-            .with_max_iterations(max_iters)
-            .with_orthantwise(1.0, 0, 99) // enable OWL-QN
-            .with_linesearch_min_step(1e-50f64)
-        };
-        prb.minimize(
-                &mut x,                   // input variables
-                evaluate,                 // define how to evaluate function
-                |prgr| {                  // define progress monitor
-                    if prgr.niter % 100 == 99 {
-                        print!(".");
-                        std::io::stdout().flush().expect("STDOUT error");
-                    }
-                    false                 // returning true will cancel optimization
-                }
-                )
-            .expect("lbfgs owlqn minimize");
-        println!("");
-    }
+    let gm = GraphModel {
+        graph, model, settings
+    };
 
-    svg::write_graph(&graph, &x, &data, model.canvas_size, &settings,
+    let linesearch = MoreThuenteLineSearch::new().with_c(1e-4, 0.9).expect("Could not init line search");
+
+    let solver = LBFGS::new(linesearch, 7);
+
+    let res = Executor::new(&gm, solver)
+        .configure(|state| state.param(x).max_iters(max_iters as u64))
+        .add_observer(SlogLogger::term(), ObserverMode::Always)
+        .run().expect("Failed to run solver");
+
+    std::thread::sleep(std::time::Duration::from_secs(1));
+
+//    {
+//        let prb = if algorithm == "lbfgsb" {
+//            lbfgs()
+//            .with_max_iterations(max_iters)
+//        } else {
+//            lbfgs()
+//            .with_max_iterations(max_iters)
+//            .with_orthantwise(1.0, 0, 99) // enable OWL-QN
+//            .with_linesearch_min_step(1e-50f64)
+//        };
+//        prb.minimize(
+//                &mut x,                   // input variables
+//                evaluate,                 // define how to evaluate function
+//                |prgr| {                  // define progress monitor
+//                    if prgr.niter % 100 == 99 {
+//                        print!(".");
+//                        std::io::stdout().flush().expect("STDOUT error");
+//                    }
+//                    false                 // returning true will cancel optimization
+//                }
+//                )
+//            .expect("lbfgs owlqn minimize");
+//        println!("");
+//    }
+
+    svg::write_graph(&gm.graph, &res.state.best_param.unwrap(), &data, gm.model.canvas_size, &gm.settings,
                      args.value_of("output").expect("Out file not given")).expect("Could not write graph");
 
     Ok(())
 }
 
+struct GraphModel {
+    graph : graph::Graph,
+    model : graph::Model,
+    settings : Settings
+}
+
+impl<'a> CostFunction for &'a GraphModel {
+    type Param = Vec<f64>;
+    type Output = f64;
+
+    fn cost(&self, x: &Self::Param) -> Result<Self::Output, Error> {
+        Ok(self.graph.cost(x, &self.model))
+    }
+}
+
+impl<'a> Gradient for &'a GraphModel {
+    type Param = Vec<f64>;
+    type Gradient = Vec<f64>;
+
+    fn gradient(&self, x: &Self::Param) -> Result<Self::Gradient, Error> {
+        Ok(self.graph.zero_fixed_points(
+            self.graph.gradient(x, &self.model), &self.settings.fixed_points))
+    }
+}
