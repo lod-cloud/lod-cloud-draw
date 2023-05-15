@@ -23,11 +23,11 @@ use std::collections::HashMap;
 use std::fs::File;
 use rand::Rng;
 use std::process::exit;
-use std::io::Write;
 use argmin::core::observers::{ObserverMode, SlogLogger};
 use argmin::core::{CostFunction, Error, Executor, Gradient};
 use argmin::solver::linesearch::MoreThuenteLineSearch;
 use argmin::solver::quasinewton::LBFGS;
+use argmin::solver::gradientdescent::SteepestDescent;
 
 fn main() {
     let args = App::new("LOD cloud diagram SVG creator")
@@ -106,8 +106,8 @@ And s,r,w are tuning constants")
              .takes_value(true))
         .arg(Arg::with_name("algorithm")
              .long("algorithm")
-             .value_name("lbfgs|owlqn")
-             .help("The algorithm used to find the cloud diagram (lbfgs = Limited BFGS, owlqn = Orthant-Wise Limited-memory Quasi-Newton)")
+             .value_name("lbfgs|sd")
+             .help("The algorithm used to find the cloud diagram (lbfgs = Limited BFGS, sd = Steepest Descent)")
              .takes_value(true))
         .arg(Arg::with_name("max_iters")
              .short("i")
@@ -177,10 +177,10 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         .unwrap_or(-1.0); // then we set this later
 
     let algorithm = match args.value_of("algorithm") {
-        Some("lbfgsb") => "lbfgsb",
-        Some("owlqn") => "owlqn",
+        Some("lbfgs") => "lbfgs",
+        Some("sd") => "sd",
         Some(a) => panic!("{} is not a supported algorithm", a),
-        None => "lbfgsb"
+        None => "lbfgs"
     };
 
     let ident_algorithm = match args.value_of("ident") {
@@ -229,28 +229,10 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
         model.canvas_size = model.repulse_dist * (2.5 + 0.5 * (graph.n as f64).sqrt());
     }
 
-    let f = |x : &Vec<f64>| {
-        graph.cost(x, &model)
-    };
-    let g = |x : &Vec<f64>| {
-        graph.zero_fixed_points(
-            graph.gradient(x, &model), &settings.fixed_points)
-    };
-
-
-    let evaluate = |x: &[f64], gx: &mut [f64]| {
-        let x_vec = x.to_vec();
-        let fx = f(&x_vec);
-        let gx_eval = g(&x_vec);
-        for i in 1..gx_eval.len() { // why 1 here??
-            gx[i] = gx_eval[i];
-        }
-        fx
-    };
     // 5.0 is constant here that allows the nodes to be placed sufficiently
     // far that the convergence to a good minimum is guaranteed
     let mut rng = rand::thread_rng();
-    let mut x = if args.is_present("random_init") {
+    let x = if args.is_present("random_init") {
         graph.set_fixed_points(
         (0..(graph.n * 2)).map(|_| {
             rng.gen_range((-5.0 * model.canvas_size)..(5.0 * model.canvas_size))
@@ -268,12 +250,19 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
 
     let linesearch = MoreThuenteLineSearch::new().with_c(1e-4, 0.9).expect("Could not init line search");
 
-    let solver = LBFGS::new(linesearch, 7);
-
-    let res = Executor::new(&gm, solver)
-        .configure(|state| state.param(x).max_iters(max_iters as u64))
-        .add_observer(SlogLogger::term(), ObserverMode::Always)
-        .run().expect("Failed to run solver");
+    let x_star = if algorithm == "sd" {
+        let solver = SteepestDescent::new(linesearch);
+        Executor::new(&gm, solver)
+            .configure(|state| state.param(x).max_iters(max_iters as u64))
+            .add_observer(SlogLogger::term(), ObserverMode::Always)
+            .run().expect("Failed to run solver").state.best_param.unwrap()
+    } else {
+        let solver = LBFGS::new(linesearch, 7);
+        Executor::new(&gm, solver)
+            .configure(|state| state.param(x).max_iters(max_iters as u64))
+            .add_observer(SlogLogger::term(), ObserverMode::Always)
+            .run().expect("Failed to run solver").state.best_param.unwrap()
+    };
 
     std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -302,7 +291,7 @@ fn do_main(args : ArgMatches) -> Result<(),&'static str> {
 //        println!("");
 //    }
 
-    svg::write_graph(&gm.graph, &res.state.best_param.unwrap(), &data, gm.model.canvas_size, &gm.settings,
+    svg::write_graph(&gm.graph, &x_star, &data, gm.model.canvas_size, &gm.settings,
                      args.value_of("output").expect("Out file not given")).expect("Could not write graph");
 
     Ok(())
@@ -328,7 +317,8 @@ impl<'a> Gradient for &'a GraphModel {
     type Gradient = Vec<f64>;
 
     fn gradient(&self, x: &Self::Param) -> Result<Self::Gradient, Error> {
-        Ok(self.graph.zero_fixed_points(
-            self.graph.gradient(x, &self.model), &self.settings.fixed_points))
+        let g = self.graph.zero_fixed_points(
+            self.graph.gradient(x, &self.model), &self.settings.fixed_points);
+        Ok(g)
     }
 }
