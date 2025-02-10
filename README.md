@@ -103,3 +103,53 @@ Data may be obtained from the following URL
 Rebuilding from the live version can be done with the following command
 
     python3 scripts/get-data.py
+
+## Dockerized version
+Build the container 
+
+docker build -t lod-cloud-draw . 
+
+Start the container
+
+docker run -it lod-cloud-draw 
+
+Then navigate to /target/release and assign the execution permission on lod-cloud-draw in order to generate the lod cloud
+
+cd /workspace/target/release
+chmod +x lod-cloud-draw
+
+Now you can use lod-cloud-draw as illustred in the section [Usage](#usage) (use ./lod-cloud-draw to execute the program)
+
+# Dockerized Version
+This section provides illustrates the Dockerized version for running lod-cloud-draw.
+
+## **Building and Running the Container**
+
+### **1. Build the Docker Image**
+To create the Docker image, run:
+```bash
+docker build -t lod-cloud-draw .
+```
+
+### **2. Start the Container**
+Launch the container in interactive mode:
+```bash
+docker run -it lod-cloud-draw
+```
+
+### **3. Assign Execution Permission**
+Once inside the container, navigate to the compiled binary and grant execution permissions:
+```bash
+cd /workspace/target/release
+chmod +x lod-cloud-draw
+```
+
+### **4. Run Lod Cloud Draw**
+You can now execute the program using:
+```bash
+./lod-cloud-draw
+```
+
+## **Usage**
+For usage instructions, refer to the [Usage](#usage) section.
+
