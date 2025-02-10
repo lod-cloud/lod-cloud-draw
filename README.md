@@ -104,24 +104,8 @@ Rebuilding from the live version can be done with the following command
 
     python3 scripts/get-data.py
 
-## Dockerized version
-Build the container 
-
-docker build -t lod-cloud-draw . 
-
-Start the container
-
-docker run -it lod-cloud-draw 
-
-Then navigate to /target/release and assign the execution permission on lod-cloud-draw in order to generate the lod cloud
-
-cd /workspace/target/release
-chmod +x lod-cloud-draw
-
-Now you can use lod-cloud-draw as illustred in the section [Usage](#usage) (use ./lod-cloud-draw to execute the program)
-
 # Dockerized Version
-This section provides illustrates the Dockerized version for running lod-cloud-draw.
+This section illustrates how running the Dockerized version of lod-cloud-draw.
 
 ## **Building and Running the Container**
 
