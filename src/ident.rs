@@ -134,8 +134,8 @@ pub fn domain_by_keywords(datasets : &mut HashMap<String, Dataset>) {
 #[cfg(test)]
 mod tests{
     use std::collections::HashMap;
-    use data::{Dataset,IntLike};
-    use ident::*;
+    use crate::data::{Dataset,IntLike};
+    use crate::ident::*;
 
     fn make_dataset(s : &str, d : &str) -> Dataset {
         Dataset {

@@ -1,15 +1,18 @@
 import json
 from urllib.request import urlopen
 from urllib.parse import urlencode
-from bs4 import BeautifulSoup
 import requests
 import sys, traceback
 from itertools import islice
 import codecs
+import os
+
+# Relative to the repository, so the script can be run from any directory
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ipfs_hashes = {
         line.strip().split(",")[1]: line.strip().split(",")[0]
-        for line in open("ipfs-hashes.csv").readlines() }
+        for line in open(os.path.join(ROOT, "ipfs-hashes.csv")).readlines() }
 
 def check_url(url, entry):
     entry["mirror"] = []
@@ -161,7 +164,7 @@ if __name__ == "__main__":
 
     data = dict(data)
 
-    with open("lod-data.json","w") as out:
+    with open(os.path.join(ROOT, "lod-data.json"),"w") as out:
         out.write(json.dumps(data, indent=2))
 
     resources = 0

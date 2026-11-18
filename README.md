@@ -19,12 +19,9 @@ to create cloud diagrams
 
 ### Requirements
 
-To use this library you must have gfortran installed in your pc
-
-* for windows use fortran compiler provided by mingw or TDM-GCC
-* for linux you can use the package manager to install gfortran
-* for Mac os you can install it from [here](http://hpc.sourceforge.net/) or 
-    [here](http://sourceforge.net/projects/hpc/files/hpc/g95/gfortran-mlion.tar.gz)
+A Rust toolchain is all that is needed to build the tool (no Fortran compiler;
+that was only needed by an older optimiser). `Cargo.lock` is committed so that
+builds are reproducible.
 
 ## Details
 
@@ -106,4 +103,8 @@ Data may be obtained from the following URL
 
 Rebuilding from the live version can be done with the following command
 
+    pip3 install -r scripts/requirements.txt
     python3 scripts/get-data.py
+
+The scripts can be run from any directory; they read and write
+`ipfs-hashes.csv` and `lod-data.json` in the root of the repository.

@@ -421,7 +421,7 @@ pub fn build_graph(data : &HashMap<String, Dataset>,
 
 #[cfg(test)]
 mod tests {
-    use graph::{sigma,relu};
+    use crate::graph::{sigma,relu};
 
     #[test]
     fn test_sigma() {

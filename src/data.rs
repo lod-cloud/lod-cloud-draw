@@ -35,11 +35,38 @@ use std::fmt;
 pub struct Dataset {
     pub description : HashMap<String, Option<String>>,
     pub title : Option<String>,
+    #[serde(default, deserialize_with = "null_or_default")]
     pub links : Vec<Link>,
     pub identifier : String,
     pub domain : String,
+    #[serde(default)]
     pub triples : IntLike,
+    #[serde(default, deserialize_with = "keywords_like")]
     pub keywords : Vec<String>
+}
+
+/// A missing or `null` value is the default (the old site wrote both)
+fn null_or_default<'de, D, T>(deserializer : D) -> Result<T, D::Error>
+    where D: Deserializer<'de>, T: Deserialize<'de> + Default
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
+}
+
+/// Keywords are a list, but the old site wrote `""` when there were none
+/// (and, for some datasets, a single string); accept those too
+fn keywords_like<'de, D>(deserializer : D) -> Result<Vec<String>, D::Error>
+    where D: Deserializer<'de>
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Keywords { Many(Vec<String>), One(String), Nothing(()) }
+
+    Ok(match Keywords::deserialize(deserializer)? {
+        Keywords::Many(v) => v,
+        Keywords::One(s) if s.trim().is_empty() => Vec::new(),
+        Keywords::One(s) => vec![s],
+        Keywords::Nothing(()) => Vec::new()
+    })
 }
 
 /// A link from a dataset to a target dataset
@@ -49,7 +76,7 @@ pub struct Link {
     pub value : String
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone,Default)]
 pub struct IntLike(Option<i64>);
 
 impl From<i64> for IntLike {
@@ -137,4 +164,30 @@ impl<'de> Visitor<'de> for IntLikeVisitor {
     //   - visit_u16
     //   - visit_u32
     //   - visit_u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(extra : &str) -> Dataset {
+        let json = format!(r#"{{"description":{{"en":"d"}},"title":"t","identifier":"x","domain":"media"{}}}"#, extra);
+        serde_json::from_str(&json).expect("dataset should parse")
+    }
+
+    #[test]
+    fn keywords_may_be_a_list_a_string_or_missing() {
+        assert_eq!(parse(r#","keywords":["a","b"]"#).keywords, vec!["a", "b"]);
+        assert!(parse(r#","keywords":"""#).keywords.is_empty());
+        assert!(parse(r#","keywords":null"#).keywords.is_empty());
+        assert!(parse("").keywords.is_empty());
+        assert_eq!(parse(r#","keywords":"a""#).keywords, vec!["a"]);
+    }
+
+    #[test]
+    fn links_and_triples_may_be_missing() {
+        let d = parse(r#","links":null"#);
+        assert!(d.links.is_empty());
+        assert_eq!(d.triples.get(), 0);
+    }
 }
