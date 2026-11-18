@@ -166,8 +166,8 @@ fn pseudo_shuffle(mut init : Vec<&usize>) -> Vec<&usize> {
 
 #[cfg(test)]
 mod tests {
-    use graph::{Graph, Edge};
-    use tree::{build_tree, to_angle, push_nearby};
+    use crate::graph::{Graph, Edge};
+    use crate::tree::{build_tree, to_angle, push_nearby};
     use std::f64::consts::PI;
 
     #[test]
