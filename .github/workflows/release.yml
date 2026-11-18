@@ -1,0 +1,29 @@
+# Publish a Linux binary when a version tag is pushed:
+#   git tag v0.1.0 && git push origin v0.1.0
+# lod-cloud-site downloads this asset (pinned version, checked against the .sha256).
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build (statically linked)
+        env:
+          RUSTFLAGS: "-C target-feature=+crt-static"
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build --release --locked --target x86_64-unknown-linux-gnu
+      - name: Package
+        run: |
+          mkdir dist
+          cp target/x86_64-unknown-linux-gnu/release/lod-cloud-draw dist/lod-cloud-draw-linux-x86_64
+          cd dist && sha256sum lod-cloud-draw-linux-x86_64 > lod-cloud-draw-linux-x86_64.sha256
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
