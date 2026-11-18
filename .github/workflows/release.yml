@@ -1,17 +1,34 @@
-# Publish a Linux binary when a version tag is pushed:
-#   git tag v0.1.0 && git push origin v0.1.0
-# lod-cloud-site downloads this asset (pinned version, checked against the .sha256).
+# Build a Linux binary and attach it to the GitHub release for a version tag.
+#
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# The release may already exist (e.g. created in the web UI with hand-written
+# notes): the binary is then added to it and the notes are left alone. To
+# (re)build the assets for an existing tag, run the workflow by hand:
+#
+#   gh workflow run release.yml -f tag=v0.1.0
+#
+# lod-cloud-site downloads the asset (pinned version, checked against the .sha256).
 name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and attach the binary to
+        required: true
 permissions:
   contents: write
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       - name: Build (statically linked)
         env:
           RUSTFLAGS: "-C target-feature=+crt-static"
@@ -26,4 +43,9 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --title "$TAG" --generate-notes
+          fi
